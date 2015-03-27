@@ -35,7 +35,10 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 	protected String doInBackground() {
 		Date start = new Date();
 		setProgress(0);
+		System.out.println("Doing " + addon.getName() + " from " + addon.getMainPageUrl());
 		int rowWalker = 0;
+		//System.out.println("Rows: " + tblAddon.getRowCount());
+		// TODO why doesn't
 		while (tblAddon.getRowCount() > rowWalker) {
 			String name = (String) tblAddon.getValueAt(rowWalker, 2);
 			String url = (String) tblAddon.getValueAt(rowWalker, 3);
@@ -46,9 +49,8 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 		}
 
 		setProgress(1);
-		tblAddon.setValueAt("Checking", rowWalker, 0);
+		SetProgress(rowWalker, "Checking");
 
-		System.out.println("Doing " + addon.getName() + " from " + addon.getMainPageUrl());
 		try {
 			String fileurl = getDataHrefFromUrl(addon.getMainPageUrl());
 			String fileName = fileurl.substring(fileurl.lastIndexOf("/")+1);
@@ -77,11 +79,11 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 			}
 			setProgress(20);
 			if (hasVersion) {
-				tblAddon.setValueAt("Up to date", rowWalker, 0);
+				SetProgress(rowWalker, "Up to date");
 				setProgress(99);
 			} else {
 				// Downloading
-				tblAddon.setValueAt("Downloading", rowWalker, 0);
+				SetProgress(rowWalker, "Downloading");
 
 				System.out.println("Downloading " + fileurl);
 				Connection.Response fileResponse = Jsoup.connect(fileurl).maxBodySize(0).ignoreContentType(true).timeout(AddonDowner.HTTP_TIMEOUT).execute();
@@ -99,7 +101,7 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 				}
 				ps.close();
 
-				tblAddon.setValueAt("Extracting", rowWalker, 0);
+				SetProgress(rowWalker, "Extracting");
 				System.out.println("Unziping ./" + fileName + " to " + extractDir);
 				try {
 					unzip("./" + fileName, extractDir);
@@ -110,9 +112,9 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 					ps.setString(4, fileName);
 					ps.setInt(5, 1);
 					ps.executeUpdate();
-					tblAddon.setValueAt("Updated", rowWalker, 0);
+					SetProgress(rowWalker, "Updated");
 				} catch (IOException e) {
-					tblAddon.setValueAt("Error in zip", rowWalker, 0);
+					SetProgress(rowWalker, "Error in zip");
 					System.out.println("Unzip exception; " + e.getMessage());
 					e.printStackTrace();
 				}
@@ -120,21 +122,31 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 			}
 			conn.close();
 		} catch (ClassNotFoundException e) {
+			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
-			tblAddon.setValueAt("Error: " + e.getMessage(), rowWalker, 0);
+			SetProgress(rowWalker, "Error: " + e.getMessage());
 		} catch (SQLException e) {
+			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
-			tblAddon.setValueAt("Error: " + e.getMessage(), rowWalker, 0);
+			SetProgress(rowWalker, "Error: " + e.getMessage());
 		} catch (FileNotFoundException e) {
+			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
-			tblAddon.setValueAt("Error: " + e.getMessage(), rowWalker, 0);
+			SetProgress(rowWalker, "Error: " + e.getMessage());
 		} catch (IOException e) {
+			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
-			tblAddon.setValueAt("Error: " + e.getMessage(), rowWalker, 0);
+			SetProgress(rowWalker, "Error: " + e.getMessage());
 		}
 
 		setProgress(100);
 		return "Done";
+	}
+
+	private void SetProgress(int rowWalker, String status) {
+		if(tblAddon.getRowCount() > 0){
+			tblAddon.setValueAt(status, rowWalker, 0);
+		}
 	}
 
 	private static final int BUFFER_SIZE = 4096;

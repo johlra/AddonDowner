@@ -27,7 +27,7 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 					nbrUpdate++;
 				}
 			}
-			//System.out.println("workers left " + nbrUpdate);
+			System.out.println("workers left " + nbrUpdate);
 		}
 		System.out.print("All update workers done");
 

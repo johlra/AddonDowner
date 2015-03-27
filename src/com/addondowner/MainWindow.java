@@ -12,7 +12,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Created by johlar on 10/03/15.
@@ -37,6 +37,7 @@ public class MainWindow {
 
 	private static String OS = System.getProperty("os.name").toLowerCase();
 	private java.util.List<UpdateWorker> updateWorkers = new ArrayList<UpdateWorker>();
+	private DataLoadWorker dataLoadWorker = null;
 
 	private static JdbcConnectionPool cp;
 	private static Connection conn;
@@ -353,6 +354,8 @@ public class MainWindow {
 			conn.close();
 			cp.dispose();
 		} catch (SQLException e) {
+			System.out.println("Error: " + e.getMessage());
+			e.printStackTrace();
 			// show message e.getMessage();
 		}
 
@@ -363,14 +366,27 @@ public class MainWindow {
 			}
 		}
 		if(!isUpdating){
-			updateWorkers = new ArrayList<UpdateWorker>();
-			for (Addon addon : addons) {
-				UpdateWorker updateWorker = new UpdateWorker(dtm, addon);
-				updateWorkers.add(updateWorker);
-				updateWorker.execute();
+			try {
+				int waitCounter = 0;
+				while (tblAddon.getRowCount() < 1 && waitCounter < 100){
+					System.out.println("Waiting for table load");
+					Thread.sleep(100);
+					waitCounter++;
+				}
+				if(waitCounter < 100){
+					System.out.println("Starting all updating workers");
+					updateWorkers = new ArrayList<UpdateWorker>();
+					for (Addon addon : addons) {
+						UpdateWorker updateWorker = new UpdateWorker(dtm, addon);
+						updateWorkers.add(updateWorker);
+						updateWorker.execute();
+					}
+					ProgressWorker pgw = new ProgressWorker(updateWorkers);
+					pgw.execute();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-			ProgressWorker pgw = new ProgressWorker(updateWorkers);
-			pgw.execute();
 		} else {
 			System.out.println("Is already updating dont starting a new");
 		}
@@ -408,7 +424,7 @@ public class MainWindow {
 		});
 
 		try {
-			DataLoadWorker dataLoadWorker = new DataLoadWorker(dtm);
+			dataLoadWorker = new DataLoadWorker(dtm);
 			dataLoadWorker.execute();
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(new MainWindow().mainPanel, "DataLoadWorker Error: " + e.getMessage());
