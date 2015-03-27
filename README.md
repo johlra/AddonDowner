@@ -5,7 +5,7 @@ I made this client cause there is no curse client for Mac. Orignial I only made 
 
 It free for anyone to use but I don't garantee anything, it's very dependet on the sites that it downloads addons from so if anything change it will be useless. It can handle most addons from curse and you add them like "http://www.curse.com/addons/wow/deadly-boss-mods/download" (link from download button of the site). It even download Elvui from "http://www.tukui.org/dl.php".
 
-Normally it should be a runnable version in artifact subdir, if your on windows you can use the bat file to start the app with. You need ta hav atleast Java 7 installed before tying.
+Normally it should be a runnable version in artifact subdir, if your on windows you can use the bat file to start the app with. You need to have atleast Java 7 installed before trying the app.
 
 Enjoy
 /Johan
