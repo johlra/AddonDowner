@@ -1,7 +1,5 @@
 package com.addondowner;
 
-import org.h2.jdbcx.JdbcConnectionPool;
-
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -11,8 +9,11 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by johlar on 10/03/15.
@@ -27,20 +28,22 @@ public class MainWindow {
 	private JButton btnDeleteVersion;
 	private JCheckBox chkbAutoUpdate;
 	private JButton btnAdd;
-	private JButton btnUpdate;
+	private JButton btnUpdateAll;
 	private JTextField txtWowLauncher;
 	private JCheckBox chkbAutoStartLauncher;
 	private JButton btnLauncher;
 	private JCheckBox chkbQuitAfterUpdate;
+	private JButton btnUpdate;
 
 	private DefaultTableModel dtm;
 
 	private static String OS = System.getProperty("os.name").toLowerCase();
 	private java.util.List<UpdateWorker> updateWorkers = new ArrayList<UpdateWorker>();
-	private DataLoadWorker dataLoadWorker = null;
 
-	private static JdbcConnectionPool cp;
-	private static Connection conn;
+	@Override
+	protected void finalize() throws Throwable {
+		super.finalize();
+	}
 
 	public MainWindow() {
 		loadAddons();
@@ -48,59 +51,23 @@ public class MainWindow {
 		btnAdd.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				NewAddon newAddon = new NewAddon();
-				//newAddon.setLocationRelativeTo(mainPanel);
-				newAddon.setSize(new Dimension(500, 300));
-				newAddon.addWindowListener(new WindowAdapter() {
+				AddAddon addAddon = new AddAddon();
+				addAddon.setLocationRelativeTo(mainPanel);
+				addAddon.setLocation(100,100);
+				addAddon.setSize(new Dimension(700, 450));
+				addAddon.addWindowListener(new WindowAdapter() {
 					@Override
 					public void windowClosed(WindowEvent e) {
 						loadAddons();
 					}
 				});
-				newAddon.setVisible(true);
+				addAddon.setVisible(true);
 			}
 		});
 		btnDelete.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Integer selectedData = null;
-				java.util.List<Integer> rowsToDelete = new ArrayList<Integer>();
-				int[] selectedRows = tblAddon.getSelectedRows();
-				for (int aSelectedRow : selectedRows) {
-					selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
-					if (null != selectedData) {
-						rowsToDelete.add(selectedData);
-					}
-				}
-				if(rowsToDelete.size() > 0){
-					String addonsToDelete = "";
-					for (int i = 0; i < rowsToDelete.size(); i++) {
-						Integer addonId = rowsToDelete.get(i);
-						if(i>0){
-							addonsToDelete = addonsToDelete + ",";
-						}
-						addonsToDelete = addonsToDelete + addonId;
-					}
-					try {
-						Class.forName("org.h2.Driver");
-						Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION, "sa", "sa");
-
-						PreparedStatement ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
-						ps.execute();
-						ps.close();
-
-						ps = conn.prepareStatement("DELETE FROM addon_list WHERE id IN (" + addonsToDelete + "); ");
-						ps.execute();
-						ps.close();
-
-						conn.close();
-					} catch (ClassNotFoundException e1) {
-						e1.printStackTrace();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
-					loadAddons();
-				}
+				deleteSelectedAddonsFromDB();
 			}
 
 		});
@@ -108,45 +75,7 @@ public class MainWindow {
 		btnDeleteVersion.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				Integer selectedData = null;
-				java.util.List<Integer> rowsToDelete = new ArrayList<Integer>();
-				int[] selectedRows = tblAddon.getSelectedRows();
-				for (int aSelectedRow : selectedRows) {
-					selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
-					if (null != selectedData) {
-						rowsToDelete.add(selectedData);
-					}
-				}
-				if (rowsToDelete.size() > 0) {
-					String addonsToDelete = "";
-					for (int i = 0; i < rowsToDelete.size(); i++) {
-						Integer addonId = rowsToDelete.get(i);
-						if (i > 0) {
-							addonsToDelete = addonsToDelete + ",";
-						}
-						addonsToDelete = addonsToDelete + addonId;
-					}
-					try {
-						Class.forName("org.h2.Driver");
-						Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION, "sa", "sa");
-
-						PreparedStatement ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
-						ps.execute();
-						ps.close();
-
-						for (int aSelectedRow : selectedRows) {
-							selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
-							if (null != selectedData) {
-								tblAddon.setValueAt("Version info removed", aSelectedRow, 0);
-							}
-						}
-						conn.close();
-					} catch (ClassNotFoundException e1) {
-						e1.printStackTrace();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
-				}
+				deleteSelectedAddonsVersionInfo();
 			}
 
 		});
@@ -154,20 +83,20 @@ public class MainWindow {
 		txtAddonDir.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				saveEntry(e);
+				saveEntry();
 			}
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				saveEntry(e);
+				saveEntry();
 			}
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				saveEntry(e);
+				saveEntry();
 			}
 
-			public void saveEntry(DocumentEvent e) {
+			public void saveEntry() {
 				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WOW_ADDON_DIR, txtAddonDir.getText());
 				dataSaverWorker.execute();
 			}
@@ -176,20 +105,20 @@ public class MainWindow {
 		txtWowLauncher.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				saveEntry(e);
+				saveEntry();
 			}
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				saveEntry(e);
+				saveEntry();
 			}
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				saveEntry(e);
+				saveEntry();
 			}
 
-			public void saveEntry(DocumentEvent e) {
+			public void saveEntry() {
 				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WOW_LAUNCHER, txtWowLauncher.getText());
 				dataSaverWorker.execute();
 			}
@@ -215,10 +144,18 @@ public class MainWindow {
 			}
 		});
 
+		btnUpdateAll.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doAddonUpdate(false);
+
+			}
+		});
+
 		btnUpdate.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				doAddonUpdate();
+				doAddonUpdate(true);
 
 			}
 		});
@@ -226,101 +163,34 @@ public class MainWindow {
 		btnLauncher.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				doLuncherStart();
+				doLauncherStart();
 			}
 		});
 
-		boolean doAutoUpdate = false;
-		boolean doStartLauncher = false;
-		try {
-			Class.forName("org.h2.Driver");
-			Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION, "sa", "sa");
+		txtAddonDir.setText(DataSource.getPref(AddonDowner.PREF_KEY_WOW_ADDON_DIR));
 
-			boolean hasPrefs = false;
-			PreparedStatement ps = conn.prepareStatement("SHOW TABLES");
-			ResultSet resultSet = ps.executeQuery();
-			while(resultSet.next()) {
-				if("prefs".equalsIgnoreCase(resultSet.getString(1))){
-					hasPrefs = true;
-				}
-			}
-			if(hasPrefs){
-				resultSet.close();
-				ps.close();
-				ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
-				ps.setString(1, AddonDowner.PREF_KEY_WOW_ADDON_DIR);
-				ResultSet rs = ps.executeQuery();
-				if (rs.next()) {
-					txtAddonDir.setText(rs.getString(1));
-				}
-				rs.close();
-				ps.setString(1, AddonDowner.PREF_KEY_WOW_LAUNCHER);
-				rs = ps.executeQuery();
-				if (rs.next()) {
-					txtWowLauncher.setText(rs.getString(1));
-				}
-				rs.close();
-				ps.setString(1, AddonDowner.PREF_KEY_AUTO_UPDATE_ON_LAUNCH);
-				rs = ps.executeQuery();
-				if (rs.next()) {
-					doAutoUpdate = Boolean.valueOf(rs.getString(1));
-					chkbAutoUpdate.setSelected(doAutoUpdate);
-				}
-				rs.close();
-				ps.setString(1, AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE);
-				rs = ps.executeQuery();
-				if (rs.next()) {
-					chkbQuitAfterUpdate.setSelected(Boolean.valueOf(rs.getString(1)));
-				}
-				rs.close();
-				ps.setString(1, AddonDowner.PREF_KEY_AUTO_START_LAUNCHER);
-				rs = ps.executeQuery();
-				if (rs.next()) {
-					doStartLauncher = Boolean.valueOf(rs.getString(1));
-					chkbAutoStartLauncher.setSelected(doStartLauncher);
-				}
-				rs.close();
-				ps.close();
-			}
-			conn.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		txtWowLauncher.setText(DataSource.getPref(AddonDowner.PREF_KEY_WOW_LAUNCHER));
+
+		boolean doAutoUpdate = DataSource.getPref(AddonDowner.PREF_KEY_AUTO_UPDATE_ON_LAUNCH).equalsIgnoreCase("true");
+		chkbAutoUpdate.setSelected(doAutoUpdate);
+
+		chkbQuitAfterUpdate.setSelected(DataSource.getPref(AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE).equalsIgnoreCase("true"));
+
+		boolean doStartLauncher = DataSource.getPref(AddonDowner.PREF_KEY_AUTO_START_LAUNCHER).equalsIgnoreCase("true");
+		chkbAutoStartLauncher.setSelected(doStartLauncher);
 
 		if(doAutoUpdate){
-			doAddonUpdate();
+			doAddonUpdate(false);
 		}
 		if(doStartLauncher){
-			doLuncherStart();
+			doLauncherStart();
 		}
-		//System.getProperties().list(System.out);
-
 	}
 
-	private void doLuncherStart() {
+	private void doLauncherStart() {
 		try {
 			// launcherPath = "/Applications/World of Warcraft/World of Warcraft Launcher.app";
-			String launcherPath = "";
-			try {
-				Class.forName("org.h2.Driver");
-				Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION, "sa", "sa");
-
-				PreparedStatement ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
-				ps.setString(1, AddonDowner.PREF_KEY_WOW_LAUNCHER);
-				ResultSet rs = ps.executeQuery();
-				if (rs.next()) {
-					launcherPath = rs.getString(1);
-				}
-				rs.close();
-				ps.close();
-				conn.close();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			String launcherPath = DataSource.getPref(AddonDowner.PREF_KEY_WOW_LAUNCHER);
 
 			if (null != launcherPath && launcherPath.length() > 0) {
 				String[] cmdline;
@@ -330,34 +200,13 @@ public class MainWindow {
 					cmdline = new String[]{launcherPath};
 				}
 				Runtime.getRuntime().exec(cmdline);
-				//Process proc = Runtime.getRuntime().exec("open \"/Applications/World of Warcraft/World of Warcraft Launcher.app\"");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void doAddonUpdate() {
-
-		java.util.List<Addon> addons = new ArrayList<Addon>();
-		try {
-			JdbcConnectionPool cp = JdbcConnectionPool.create(AddonDowner.BD_CONNECTION, "sa", "sa");
-			Connection conn = cp.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("SELECT id,name, main_page_url FROM addon_list;");
-
-			ResultSet resultSet = preparedStatement.executeQuery();
-			while (resultSet.next()) {
-				addons.add(new Addon(resultSet.getInt(1), resultSet.getString(2), resultSet.getString(3)));
-			}
-			resultSet.close();
-			preparedStatement.close();
-			conn.close();
-			cp.dispose();
-		} catch (SQLException e) {
-			System.out.println("Error: " + e.getMessage());
-			e.printStackTrace();
-			// show message e.getMessage();
-		}
+	private void doAddonUpdate(boolean onlySelected) {
 
 		boolean isUpdating = false;
 		for (UpdateWorker updateWorker : updateWorkers) {
@@ -366,7 +215,22 @@ public class MainWindow {
 			}
 		}
 		if(!isUpdating){
+			Date start = new Date();
 			try {
+				java.util.List<Addon> addons = new ArrayList<Addon>();
+				if(onlySelected){
+					Integer selectedData;
+					int[] selectedRows = tblAddon.getSelectedRows();
+					for (int aSelectedRow : selectedRows) {
+						selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
+						if (null != selectedData) {
+							addons.add(new Addon(selectedData));
+						}
+					}
+				} else {
+					addons = Addon.fetchAddonList();
+				}
+
 				int waitCounter = 0;
 				while (tblAddon.getRowCount() < 1 && waitCounter < 100){
 					System.out.println("Waiting for table load");
@@ -381,7 +245,7 @@ public class MainWindow {
 						updateWorkers.add(updateWorker);
 						updateWorker.execute();
 					}
-					ProgressWorker pgw = new ProgressWorker(updateWorkers);
+					ProgressWorker pgw = new ProgressWorker(updateWorkers, start);
 					pgw.execute();
 				}
 			} catch (InterruptedException e) {
@@ -399,12 +263,14 @@ public class MainWindow {
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.pack();
 		frame.setSize(800, 500);
+		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}
 
 	public void loadAddons() {
 		btnDelete.setVisible(false);
 		btnDeleteVersion.setVisible(false);
+		btnUpdate.setVisible(false);
 
 		String header[] = new String[]{"Status", "Id", "Name", "URL"};
 		dtm = new DefaultTableModel(0, header.length){
@@ -420,16 +286,15 @@ public class MainWindow {
 			public void valueChanged(ListSelectionEvent e) {
 				btnDelete.setVisible(tblAddon.getSelectedRows().length > 0);
 				btnDeleteVersion.setVisible(tblAddon.getSelectedRows().length > 0);
+				btnUpdate.setVisible(tblAddon.getSelectedRows().length > 0);
 			}
 		});
 
-		try {
-			dataLoadWorker = new DataLoadWorker(dtm);
-			dataLoadWorker.execute();
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(new MainWindow().mainPanel, "DataLoadWorker Error: " + e.getMessage());
-			e.printStackTrace();
+		java.util.List<Addon> addons = Addon.fetchAddonList();
+		for (Addon addon : addons) {
+			dtm.addRow(new Object[]{"", addon.getId(), addon.getName(), addon.getUrl()});
 		}
+
 		tblAddon.getColumnModel().getColumn(0).setPreferredWidth(130);
 		tblAddon.getColumnModel().getColumn(1).setPreferredWidth(30);
 		tblAddon.getColumnModel().getColumn(2).setPreferredWidth(180);
@@ -441,10 +306,113 @@ public class MainWindow {
 		//tblAddon.getColumn("Name").setWidth(80);
 	}
 
-	@Override
-	protected void finalize() throws Throwable {
-		cp.dispose();
-		super.finalize();
+	private void deleteSelectedAddonsVersionInfo() {
+		Integer selectedData;
+		java.util.List<Integer> rowsToDelete = new ArrayList<Integer>();
+		int[] selectedRows = tblAddon.getSelectedRows();
+		for (int aSelectedRow : selectedRows) {
+			selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
+			if (null != selectedData) {
+				rowsToDelete.add(selectedData);
+			}
+		}
+		if (rowsToDelete.size() > 0) {
+			String addonsToDelete = "";
+			for (int i = 0; i < rowsToDelete.size(); i++) {
+				Integer addonId = rowsToDelete.get(i);
+				if (i > 0) {
+					addonsToDelete = addonsToDelete + ",";
+				}
+				addonsToDelete = addonsToDelete + addonId;
+			}
+			Connection conn = null;
+			PreparedStatement ps = null;
+			try {
+				conn = DataSource.getInstance().getConnection();
+				ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
+				ps.execute();
+				ps.close();
+				conn.close();
+				for (int aSelectedRow : selectedRows) {
+					selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
+					if (null != selectedData) {
+						tblAddon.setValueAt("Version info removed", aSelectedRow, 0);
+					}
+				}
+			} catch (ClassNotFoundException e1) {
+				e1.printStackTrace();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			} finally {
+				if (ps != null)
+					try {
+						ps.close();
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				if (conn != null)
+					try {
+						conn.close();
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+			}
+		}
+	}
+
+	private void deleteSelectedAddonsFromDB() {
+		Integer selectedData;
+		java.util.List<Integer> rowsToDelete = new ArrayList<Integer>();
+		int[] selectedRows = tblAddon.getSelectedRows();
+		for (int aSelectedRow : selectedRows) {
+			selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
+			if (null != selectedData) {
+				rowsToDelete.add(selectedData);
+			}
+		}
+		if (rowsToDelete.size() > 0) {
+			String addonsToDelete = "";
+			for (int i = 0; i < rowsToDelete.size(); i++) {
+				Integer addonId = rowsToDelete.get(i);
+				if (i > 0) {
+					addonsToDelete = addonsToDelete + ",";
+				}
+				addonsToDelete = addonsToDelete + addonId;
+			}
+			Connection conn = null;
+			PreparedStatement ps = null;
+			try {
+				conn = DataSource.getInstance().getConnection();
+
+				ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
+				ps.execute();
+				ps.close();
+
+				ps = conn.prepareStatement("DELETE FROM addon_list WHERE id IN (" + addonsToDelete + "); ");
+				ps.execute();
+				ps.close();
+
+				conn.close();
+			} catch (ClassNotFoundException e1) {
+				e1.printStackTrace();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			} finally {
+				if (ps != null)
+					try {
+						ps.close();
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				if (conn != null)
+					try {
+						conn.close();
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+			}
+			loadAddons();
+		}
 	}
 
 	public static boolean isWindows() {
@@ -462,30 +430,4 @@ public class MainWindow {
 	public static boolean isSolaris() {
 		return (OS.contains("sunos"));
 	}
-
-/*	void dbconnect(){
-		try {
-			Class.forName("org.h2.Driver");
-			Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION);
-
-
-			conn.close();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-
-		try {
-			JdbcConnectionPool cp = JdbcConnectionPool.create(AddonDowner.BD_CONNECTION, "sa", "sa");
-			Connection conn = cp.getConnection();
-			conn.close();
-			cp.dispose();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-
-	} */
 }

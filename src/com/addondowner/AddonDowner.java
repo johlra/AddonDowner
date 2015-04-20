@@ -11,6 +11,8 @@ public class AddonDowner {
 	public final static String PREF_KEY_AUTO_QUIT_AFTER_UPDATE = "autoquitafterupdate";
 	public final static String PREF_KEY_AUTO_START_LAUNCHER = "autostartlauncher";
 
+	public static final String TEMP_FILE_DIR = "./download_cache/";
+
 	public final static int HTTP_TIMEOUT = 30 * 1000;
 
 	public static void main(String[] args) {
@@ -19,7 +21,7 @@ public class AddonDowner {
 	    System.setProperty("apple.laf.useScreenMenuBar", "true");
 	    System.setProperty("com.apple.mrj.application.apple.menu.about.name", appName);
 	    // end dosen't work
-
+		DataSource.checkDBStruckt();
 	    MainWindow.main(new String[]{appName});
 		System.out.println("Hello World!");
     }

@@ -2,7 +2,8 @@ package com.addondowner;
 
 import javax.swing.*;
 import java.sql.*;
-import java.util.List;
+import java.util.*;
+import java.util.Date;
 
 /**
  * Created by johlar on 12/03/15.
@@ -11,9 +12,11 @@ import java.util.List;
 public class ProgressWorker extends SwingWorker<String, Addon> {
 
 	private final List<UpdateWorker> updateWorkers;
+	private final Date startTime;
 
-	public ProgressWorker(List<UpdateWorker> updateWorkers) {
+	public ProgressWorker(List<UpdateWorker> updateWorkers, Date start) {
 		this.updateWorkers = updateWorkers;
+		this.startTime = start;
 	}
 
 	@Override
@@ -27,17 +30,19 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 					nbrUpdate++;
 				}
 			}
-			System.out.println("workers left " + nbrUpdate);
+			//System.out.println("workers left " + nbrUpdate);
 		}
-		System.out.print("All update workers done");
+		System.out.print("All update workers done, total time " + (new Date().getTime()-startTime.getTime()) + " ms");
 
 		Boolean doAutoQuit = false;
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
-			Class.forName("org.h2.Driver");
-			Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION, "sa", "sa");
-			PreparedStatement ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
+			conn = DataSource.getInstance().getConnection();
+			ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
 			ps.setString(1, AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE);
-			ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 			if (rs.next()) {
 				doAutoQuit = Boolean.valueOf(rs.getString(1));
 			}
@@ -47,6 +52,25 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			if (rs != null)
+				try {
+					rs.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			if (ps != null)
+				try {
+					ps.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			if (conn != null)
+				try {
+					conn.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
 		}
 
 		if(doAutoQuit){

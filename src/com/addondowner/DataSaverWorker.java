@@ -1,10 +1,7 @@
 package com.addondowner;
 
 import javax.swing.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 
 /**
@@ -23,11 +20,11 @@ public class DataSaverWorker extends SwingWorker<String, Addon> {
 
 	@Override
 	protected String doInBackground() throws Exception {
+		Connection conn = null;
+		PreparedStatement ps = null;
 		try {
-			Class.forName("org.h2.Driver");
-			Connection conn = DriverManager.getConnection(AddonDowner.BD_CONNECTION, "sa", "sa");
-
-			PreparedStatement ps = conn.prepareStatement("REPLACE INTO prefs (name, data) VALUES (?,?) ; ");
+			conn = DataSource.getInstance().getConnection();
+			ps = conn.prepareStatement("REPLACE INTO prefs (name, data) VALUES (?,?) ; ");
 			ps.setString(1, field);
 			ps.setString(2, data);
 			ps.execute();
@@ -37,6 +34,9 @@ public class DataSaverWorker extends SwingWorker<String, Addon> {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
+		} finally {
+			if (ps != null) try { ps.close(); } catch (SQLException e1) { e1.printStackTrace(); }
+			if (conn != null) try { conn.close(); } catch (SQLException e1) { e1.printStackTrace(); }
 		}
 		return "Done";
 	}
