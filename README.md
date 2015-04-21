@@ -9,3 +9,7 @@ Normally it should be a runnable version in artifact subdir, if your on windows 
 
 Enjoy
 /Johan
+
+### Versions
++   0.2 alpha - added simpler adder, has list on server that is update when people is adding there own addon, refactor
++   0.1 alpha - first version with basic functions, simple add only from url, working download and refresh of addon, checking when addons should be downloaded, autoupdate on start, auto quit after update
