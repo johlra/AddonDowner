@@ -21,8 +21,13 @@ public class AddonDowner {
 	    System.setProperty("apple.laf.useScreenMenuBar", "true");
 	    System.setProperty("com.apple.mrj.application.apple.menu.about.name", appName);
 	    // end dosen't work
-		DataSource.checkDBStruckt();
-	    MainWindow.main(new String[]{appName});
-		System.out.println("Hello World!");
+		try {
+			Class.forName("org.h2.Driver");
+			DataSource.checkDBStruckt();
+			MainWindow.main(new String[]{appName});
+			System.out.println("Hello World!");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
     }
 }
