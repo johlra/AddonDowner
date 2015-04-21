@@ -10,6 +10,10 @@ Normally it should be a runnable version in artifact subdir, if your on windows 
 Enjoy
 /Johan
 
+### Install
+It's not much to install. Download artifact/AddonDowner.bat and artifact/AddonDowner.jar (use the "Raw" button on GitHub foreach file). Run the .bat file from a command shell (to see the console out extra info) or dubbel click it.    
+On none windows make your own start file from the same java command that are in the .bat file. (If you need, on my mac I only double click the jar.)    
+
 ### Versions
 +   0.2 alpha - added simpler adder, has list on server that is update when people is adding there own addon, refactor
 +   0.1 alpha - first version with basic functions, simple add only from url, working download and refresh of addon, checking when addons should be downloaded, autoupdate on start, auto quit after update
