@@ -9,8 +9,10 @@ If "Auto update on launch" is checked the app will direct on start do a check fo
 If "Quit after update" is checked the app will quit itself after all addons are updated.    
 If "Auto start WOW launcher" is checked the app will start what's in the field "WOW Launcher" direct on start of app, so if wow have something that needs to be downloaded it will do it at the same time as addons will be updated.   
 
-Then we have 3 buttons, "Launcher" will start what's in "WOW launcher", "Update" will run the update of all addons and the last button "Add" will open a dialog that ask for name and url.    
-Name is for you, so you easy can see which addon it is. URL is the download url.        
+Then we have 3 buttons, "Launcher" will start what's in "WOW launcher", "Update all" will run the update of all addons and the last button "Add" will open a dialog that shows all addons in server directory, there you can select witch to use or add new from url.    
+
+When selecting a addon (or multiple) we have 3 more buttons, "Delete" will remove the addon, "DeleteVersionInfo" will remove meta data for the addon forcing an update on next update, "Update" will update selected addons.    
+
 As for the first alpha version we have support for curse addons urls and elvui from tukui (that url will always be http://www.tukui.org/dl.php). Curse url is taken from each curse addons download button, like on the page "http://www.curse.com/addons/wow/deadly-boss-mods" you can right click on the "Download" button and get the link "http://www.curse.com/addons/wow/deadly-boss-mods/download" in your clipboard and you can paste it into the app.
 
 Good luck!
