@@ -331,8 +331,6 @@ public class MainWindow {
 				conn = DataSource.getInstance().getConnection();
 				ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
 				ps.execute();
-				ps.close();
-				conn.close();
 				for (int aSelectedRow : selectedRows) {
 					selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
 					if (null != selectedData) {
@@ -344,18 +342,7 @@ public class MainWindow {
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			} finally {
-				if (ps != null)
-					try {
-						ps.close();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
-				if (conn != null)
-					try {
-						conn.close();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
+				DataSource.closeQuietly(null, ps, conn);
 			}
 		}
 	}
@@ -392,24 +379,12 @@ public class MainWindow {
 				ps.execute();
 				ps.close();
 
-				conn.close();
 			} catch (ClassNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			} finally {
-				if (ps != null)
-					try {
-						ps.close();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
-				if (conn != null)
-					try {
-						conn.close();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
+				DataSource.closeQuietly(null, ps, conn);
 			}
 			loadAddons();
 		}

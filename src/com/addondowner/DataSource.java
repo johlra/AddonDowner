@@ -106,24 +106,7 @@ public class DataSource {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+			closeQuietly(rs, ps, conn);
 		}
 	}
 
@@ -164,32 +147,12 @@ public class DataSource {
 			if (rs.next()) {
 				ret = rs.getString(1);
 			}
-			rs.close();
-			ps.close();
-			conn.close();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
+			DataSource.closeQuietly(rs, ps, conn);
 		}
 		return ret;
 	}
@@ -206,25 +169,33 @@ public class DataSource {
 				ps.setString(3, addon.getUrl());
 				ps.execute();
 			}
-			ps.close();
-			conn.close();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
+			DataSource.closeQuietly(null, ps, conn);
 		}
+	}
+
+	public static void closeQuietly(ResultSet rs, PreparedStatement ps, Connection conn) {
+		if (rs != null)
+			try {
+				rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		if (ps != null)
+			try {
+				ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		if (conn != null)
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 	}
 }

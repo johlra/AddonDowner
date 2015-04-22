@@ -109,7 +109,6 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 
 				setProgress(99);
 			}
-			conn.close();
 		} catch (ClassNotFoundException e) {
 			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
@@ -127,24 +126,7 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 			e.printStackTrace();
 			SetProgress(rowWalker, "Error: " + e.getMessage());
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
+			DataSource.closeQuietly(rs, ps, conn);
 		}
 
 		System.out.println("Check/Update of " + addon.getName() + " took " + (new Date().getTime() - start.getTime()) + " ms");

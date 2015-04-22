@@ -28,15 +28,12 @@ public class DataSaverWorker extends SwingWorker<String, Addon> {
 			ps.setString(1, field);
 			ps.setString(2, data);
 			ps.execute();
-			ps.close();
-			conn.close();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			if (ps != null) try { ps.close(); } catch (SQLException e1) { e1.printStackTrace(); }
-			if (conn != null) try { conn.close(); } catch (SQLException e1) { e1.printStackTrace(); }
+			DataSource.closeQuietly(null, ps, conn);
 		}
 		return "Done";
 	}

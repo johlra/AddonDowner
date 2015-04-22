@@ -44,31 +44,12 @@ public class Addon {
 				this.name = rs.getString(2);
 				this.url = rs.getString(3);
 			}
-			ps.close();
-			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+			DataSource.closeQuietly(rs, ps, conn);
 		}
 	}
 
@@ -118,31 +99,12 @@ public class Addon {
 			while (rs.next()){
 				r = new Addon(rs.getInt(1), rs.getString(2), rs.getString(3));
 			}
-			ps.close();
-			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+			DataSource.closeQuietly(rs, ps, conn);
 		}
 		return r;
 	}
@@ -160,9 +122,6 @@ public class Addon {
 			while (rs.next()) {
 				addons.add(new Addon(rs.getInt(1), rs.getString(2), rs.getString(3)));
 			}
-			rs.close();
-			ps.close();
-			conn.close();
 		} catch (SQLException e) {
 			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
@@ -170,24 +129,7 @@ public class Addon {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+			DataSource.closeQuietly(rs, ps, conn);
 		}
 		return addons;
 	}

@@ -53,24 +53,7 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			if (rs != null)
-				try {
-					rs.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (ps != null)
-				try {
-					ps.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
+			DataSource.closeQuietly(rs, ps, conn);
 		}
 
 		if(doAutoQuit){

@@ -12,6 +12,7 @@ import java.util.zip.ZipInputStream;
  */
 public class ZipHandler {
 	private static final int BUFFER_SIZE = 4096;
+	private static final String SEPARATOR = "/"; //File.separator;
 
 	private List<String> topDirs;
 	private List<Toc> tocs;
@@ -54,7 +55,7 @@ public class ZipHandler {
 		// iterates over entries in the zip file
 		while (entry != null) {
 			collectDir(entry);
-			String filePath = destDirectory + File.separator + entry.getName();
+			String filePath = destDirectory + SEPARATOR + entry.getName();
 			if (!entry.isDirectory()) {
 				// if the entry is a file, extracts it
 				extractFile(zipIn, filePath, entry.getCrc());
@@ -73,7 +74,7 @@ public class ZipHandler {
 
 	private void collectDir(ZipEntry entry) {
 		String filePath = entry.getName();
-		int indexOf = filePath.indexOf(File.separator);
+		int indexOf = filePath.indexOf(SEPARATOR);
 		String dir = filePath.substring(0, indexOf);
 		if(!topDirs.contains(dir)){
 			topDirs.add(dir);
@@ -92,7 +93,7 @@ public class ZipHandler {
 	private void extractFile(ZipInputStream zipIn, String filePath, long crc) throws IOException {
 
 		// make dirs so we can extract file
-		int lastIndexOf = filePath.lastIndexOf(File.separator);
+		int lastIndexOf = filePath.lastIndexOf(SEPARATOR);
 		if(writeToDisk) {
 			String path = filePath.substring(0, lastIndexOf);
 			File dir = new File(path);
@@ -105,7 +106,7 @@ public class ZipHandler {
 		//org.apache.commons.StringUtils.countMatches()
 		int amountDirs = 0;
 		for (int i = 0; i < filePath.length(); i++)
-			if (filePath.charAt(i) == File.separatorChar)
+			if (filePath.charAt(i) == SEPARATOR.charAt(0))
 				amountDirs++;
 		if (filePath.endsWith(".toc") && amountDirs == 2) {
 			isToc = true;
