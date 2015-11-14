@@ -1,6 +1,7 @@
 package com.addondowner;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -30,11 +31,16 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 					nbrUpdate++;
 				}
 			}
+			//TODO Need to check all UpdateToServerWorker too
+
 			//System.out.println("workers left " + nbrUpdate);
 		}
+
+
 		System.out.print("All update workers done, total time " + (new Date().getTime()-startTime.getTime()) + " ms");
 
 		Boolean doAutoQuit = false;
+		Boolean doCmdAfter = false;
 		Connection conn = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -48,6 +54,17 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 			}
 			rs.close();
 			ps.close();
+
+			ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
+			ps.setString(1, AddonDowner.PREF_KEY_DO_CMD_AFTER);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				doCmdAfter = Boolean.valueOf(rs.getString(1));
+			}
+			rs.close();
+			ps.close();
+
+
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
@@ -56,7 +73,12 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 			DataSource.closeQuietly(rs, ps, conn);
 		}
 
+		if(doCmdAfter){
+			doCmdAfter();
+		}
+
 		if(doAutoQuit){
+			Thread.sleep(10000);
 			System.out.println(" quiting");
 			System.exit(0);
 		} else {
@@ -73,5 +95,23 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 	@Override
 	protected void done() {
 		super.done();
+	}
+
+	private void doCmdAfter() {
+		try {
+			String launcherPath = DataSource.getPref(AddonDowner.PREF_KEY_CMD_AFTER);
+
+			if (null != launcherPath && launcherPath.length() > 0) {
+				String[] cmdline;
+				if (MainWindow.isMac()) {
+					cmdline = new String[]{"open", "-a", launcherPath};
+				} else {
+					cmdline = new String[]{launcherPath};
+				}
+				Runtime.getRuntime().exec(cmdline);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

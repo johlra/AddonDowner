@@ -56,8 +56,7 @@ public class AddAddon extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				NewAddon newAddon = new NewAddon();
 				newAddon.setSize(new Dimension(500, 400));
-				newAddon.setLocationRelativeTo(panel1);
-				newAddon.setLocation(200, 200);
+				MainWindow.SetWindowPosCenter(newAddon);
 				newAddon.addWindowListener(new WindowAdapter() {
 					@Override
 					public void windowClosed(WindowEvent e) {

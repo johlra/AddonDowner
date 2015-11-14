@@ -21,7 +21,8 @@ public class NetHandler {
 
 	private static final String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.0) Gecko/20100101 Firefox/36.0";
 	private static final String acceptMethods = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-
+	static final String internetCheckHost = "www.curse.com";
+	static String host = "addondowner.homeip.net";
 
 	public static String fileDownloader(String fileUrl) throws IOException {
 		String fileName = getFileNameFromUrl(fileUrl);
@@ -105,7 +106,7 @@ public class NetHandler {
 	}
 
 	public static void serverUploadAddonMeta(Map<String, String> params) throws IOException {
-		String url = "http://addondowner.homeip.net/cgi-bin/addonmeta.cgi";
+		String url = "http://" + host + "/cgi-bin/addonmeta.cgi";
 		String testParams = "";
 		Connection connection = getConnection(url);
 		for (Map.Entry<String, String> param : params.entrySet()) {
@@ -127,14 +128,15 @@ public class NetHandler {
 	}
 
 	public static Addon[] getServerAddonList() throws IOException {
-		String url = "http://addondowner.homeip.net/cgi-bin/addonlist.cgi";
-		Connection.Response fileResponse = getConnection(url).execute();
+		String url = "http://" + host + "/cgi-bin/addonlist.cgi";
+		Connection.Response fileResponse = getConnection(url).execute(); // todo add shorter timeout
 		Gson gson = new Gson();
 		return gson.fromJson(fileResponse.body(), Addon[].class);
 	}
 
 	public static Addon[] getAddonsFromDirs(String[] directories) throws IOException {
-		String url = "http://addondowner.homeip.net/cgi-bin/addonfromdirs.cgi";
+
+		String url = "http://" + host + "/cgi-bin/addonfromdirs.cgi";
 		String[] postString = new String[directories.length * 2];
 		for (int i = 0; i < directories.length; i++) {
 			String directory = directories[i];
@@ -145,5 +147,34 @@ public class NetHandler {
 		Connection.Response fileResponse = getConnection(url).data(postString).execute();
 		Gson gson = new Gson();
 		return gson.fromJson(fileResponse.body(), Addon[].class);
+	}
+
+	public static boolean checkForNetwork() {
+		String url = "http://" + internetCheckHost;
+		boolean gotContact = false;
+		int retries = 0;
+
+		while (!gotContact && retries < 10) {
+			try {
+				Connection.Response response = getConnection(url).execute();
+				if(response.statusCode() == 200){
+					gotContact = true;
+
+					response = getConnection("http://" + host).execute();
+					if(response.statusCode() != 200){
+						host = "192.168.1.100";
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				retries++;
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e1) {
+					return false;
+				}
+			}
+		}
+		return gotContact;
 	}
 }

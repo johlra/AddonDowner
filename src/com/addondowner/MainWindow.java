@@ -29,11 +29,13 @@ public class MainWindow {
 	private JCheckBox chkbAutoUpdate;
 	private JButton btnAdd;
 	private JButton btnUpdateAll;
-	private JTextField txtWowLauncher;
-	private JCheckBox chkbAutoStartLauncher;
+	private JTextField txtCmdBefore;
+	private JCheckBox chkbDoRunBefore;
 	private JButton btnLauncher;
 	private JCheckBox chkbQuitAfterUpdate;
 	private JButton btnUpdate;
+	private JCheckBox doRunAfterCheckBox;
+	private JTextField txtCmdAfter;
 
 	private DefaultTableModel dtm;
 
@@ -53,8 +55,8 @@ public class MainWindow {
 			public void actionPerformed(ActionEvent e) {
 				AddAddon addAddon = new AddAddon();
 				addAddon.setLocationRelativeTo(mainPanel);
-				addAddon.setLocation(100,100);
 				addAddon.setSize(new Dimension(700, 450));
+				SetWindowPosCenter(addAddon);
 				addAddon.addWindowListener(new WindowAdapter() {
 					@Override
 					public void windowClosed(WindowEvent e) {
@@ -102,7 +104,7 @@ public class MainWindow {
 			}
 		});
 
-		txtWowLauncher.getDocument().addDocumentListener(new DocumentListener() {
+		txtCmdBefore.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void insertUpdate(DocumentEvent e) {
 				saveEntry();
@@ -119,7 +121,28 @@ public class MainWindow {
 			}
 
 			public void saveEntry() {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WOW_LAUNCHER, txtWowLauncher.getText());
+				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_CMD_BEFORE, txtCmdBefore.getText());
+				dataSaverWorker.execute();
+			}
+		});
+		txtCmdAfter.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				saveEntry();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				saveEntry();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				saveEntry();
+			}
+
+			public void saveEntry() {
+				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_CMD_AFTER, txtCmdAfter.getText());
 				dataSaverWorker.execute();
 			}
 		});
@@ -137,9 +160,15 @@ public class MainWindow {
 				dataSaverWorker.execute();
 			}
 		});
-		chkbAutoStartLauncher.addItemListener(new ItemListener() {
+		chkbDoRunBefore.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_AUTO_START_LAUNCHER, String.valueOf(chkbAutoStartLauncher.isSelected()));
+				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_DO_CMD_BEFORE, String.valueOf(chkbDoRunBefore.isSelected()));
+				dataSaverWorker.execute();
+			}
+		});
+		doRunAfterCheckBox.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_DO_CMD_AFTER, String.valueOf(doRunAfterCheckBox.isSelected()));
 				dataSaverWorker.execute();
 			}
 		});
@@ -163,34 +192,52 @@ public class MainWindow {
 		btnLauncher.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				doLauncherStart();
+				doCmdBefore();
 			}
 		});
 
 		txtAddonDir.setText(DataSource.getPref(AddonDowner.PREF_KEY_WOW_ADDON_DIR));
 
-		txtWowLauncher.setText(DataSource.getPref(AddonDowner.PREF_KEY_WOW_LAUNCHER));
+		txtCmdBefore.setText(DataSource.getPref(AddonDowner.PREF_KEY_CMD_BEFORE));
+		txtCmdAfter.setText(DataSource.getPref(AddonDowner.PREF_KEY_CMD_AFTER));
+
 
 		boolean doAutoUpdate = DataSource.getPref(AddonDowner.PREF_KEY_AUTO_UPDATE_ON_LAUNCH).equalsIgnoreCase("true");
 		chkbAutoUpdate.setSelected(doAutoUpdate);
 
 		chkbQuitAfterUpdate.setSelected(DataSource.getPref(AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE).equalsIgnoreCase("true"));
 
-		boolean doStartLauncher = DataSource.getPref(AddonDowner.PREF_KEY_AUTO_START_LAUNCHER).equalsIgnoreCase("true");
-		chkbAutoStartLauncher.setSelected(doStartLauncher);
+		boolean doStartLauncher = DataSource.getPref(AddonDowner.PREF_KEY_DO_CMD_BEFORE).equalsIgnoreCase("true");
+		chkbDoRunBefore.setSelected(doStartLauncher);
+
+		doRunAfterCheckBox.setSelected(DataSource.getPref(AddonDowner.PREF_KEY_DO_CMD_AFTER).equalsIgnoreCase("true"));
+
+		if (doStartLauncher) {
+			doCmdBefore();
+		}
 
 		if(doAutoUpdate){
 			doAddonUpdate(false);
 		}
-		if(doStartLauncher){
-			doLauncherStart();
+	}
+
+	static void SetWindowPosCenter(JDialog addAddon) {
+		Point windowsStartLocation = getWindowsStartLocation();
+
+		if (null != windowsStartLocation) {
+			Dimension windowStartSize = getWindowStartSize();
+			int x = (int)windowsStartLocation.getX() + (((int)windowStartSize.getWidth()- addAddon.getWidth()) /2);
+			int y = (int)windowsStartLocation.getY() + (((int)windowStartSize.getHeight()-addAddon.getHeight())/2);
+			addAddon.setLocation(x,y);
+		} else {
+			addAddon.setLocationRelativeTo(null);
 		}
 	}
 
-	private void doLauncherStart() {
+	private void doCmdBefore() {
 		try {
 			// launcherPath = "/Applications/World of Warcraft/World of Warcraft Launcher.app";
-			String launcherPath = DataSource.getPref(AddonDowner.PREF_KEY_WOW_LAUNCHER);
+			String launcherPath = DataSource.getPref(AddonDowner.PREF_KEY_CMD_BEFORE);
 
 			if (null != launcherPath && launcherPath.length() > 0) {
 				String[] cmdline;
@@ -262,9 +309,96 @@ public class MainWindow {
 		frame.setContentPane(new MainWindow().mainPanel);
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.pack();
-		frame.setSize(800, 500);
-		frame.setLocationRelativeTo(null);
+		frame.setSize(getWindowStartSize());
+		Point windowsStartLocation = getWindowsStartLocation();
+		if(null != windowsStartLocation){
+			frame.setLocation(windowsStartLocation);
+		} else {
+			frame.setLocationRelativeTo(null);
+		}
+		frame.addComponentListener(new ComponentListener() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				saveWindowSize(e);
+			}
+
+			@Override
+			public void componentMoved(ComponentEvent e) {
+				saveWindowPos(e);
+			}
+
+			@Override
+			public void componentShown(ComponentEvent e) {
+			}
+
+			@Override
+			public void componentHidden(ComponentEvent e) {
+			}
+		});
 		frame.setVisible(true);
+	}
+
+	private static void saveWindowSize(ComponentEvent e) {
+		int x = e.getComponent().getWidth();
+		int y = e.getComponent().getHeight();
+		String pos = x + ";" + y;
+		DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WINDOW_SIZE, pos);
+		dataSaverWorker.execute();
+	}
+
+	private static Dimension getWindowStartSize() {
+		try {
+			String comprPos = DataSource.getPref(AddonDowner.PREF_KEY_WINDOW_SIZE);
+			comprPos = comprPos.replace("x", "").replace("y", "").replace(":", "");
+			String[] pos = comprPos.split(";");
+			int posx = Integer.parseInt(pos[0]);
+			int posy = Integer.parseInt(pos[1]);
+			return new Dimension(posx, posy);
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+		return new Dimension(800, 500);
+	}
+
+	private static void saveWindowPos(ComponentEvent e) {
+		int x = e.getComponent().getX();
+		int y = e.getComponent().getY();
+		String pos = x + ";" + y;
+		DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WINDOW_POS, pos);
+		dataSaverWorker.execute();
+	}
+
+	private static Point getWindowsStartLocation() {
+		try {
+			String comprPos = DataSource.getPref(AddonDowner.PREF_KEY_WINDOW_POS);
+			comprPos = comprPos.replace("x","").replace("y","").replace(":", "");
+			String[] pos = comprPos.split(";");
+			int posx = Integer.parseInt(pos[0]);
+			int posy = Integer.parseInt(pos[1]);
+
+			boolean posXOnScreen = false;
+			boolean posYOnScreen = false;
+			GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+			for (GraphicsDevice device : devices) {
+				Rectangle bounds = device.getDefaultConfiguration().getBounds();
+				Point location = bounds.getLocation();
+				Dimension size = bounds.getSize();
+				if(posx > location.getX() && posx < (location.getX() + size.getWidth())){
+					posXOnScreen = true;
+				}
+				if (posy > location.getY() && posy < (location.getY() + size.getHeight())) {
+					posYOnScreen = true;
+				}
+			}
+			if(posXOnScreen && posYOnScreen){
+				return new Point(posx,posy);
+			}
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		} catch (HeadlessException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public void loadAddons() {
