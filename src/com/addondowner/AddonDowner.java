@@ -16,6 +16,7 @@ public class AddonDowner {
 	public final static String PREF_KEY_DO_CMD_AFTER = "docmdafterupdate";
 	public final static String PREF_KEY_WINDOW_POS = "windowpos";
 	public final static String PREF_KEY_WINDOW_SIZE = "windowsize";
+	public final static String PREF_KEY_SERVER_HOST = "serverhostaddress";
 
 	public static final String TEMP_FILE_DIR = "." + File.separator + "download_cache" + File.separator;
 

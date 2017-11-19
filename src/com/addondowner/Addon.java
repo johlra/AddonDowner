@@ -31,6 +31,9 @@ public class Addon {
 	}
 
 	public Addon(Integer addonId) {
+		this.id = 0;
+		this.name = "";
+		this.url = "";
 		Connection conn = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -85,14 +88,14 @@ public class Addon {
 		this.selected = selected;
 	}
 
-	public static Addon fetchOnNameAndUrl(String name, String url) {
+	public static Addon fetchOnNameOrUrl(String name, String url) {
 		Addon r = null;
 		Connection conn = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
 			conn = DataSource.getInstance().getConnection();
-			ps = conn.prepareStatement("SELECT id, name, main_page_url FROM addon_list WHERE name=? AND main_page_url=? ; ");
+			ps = conn.prepareStatement("SELECT id, name, main_page_url FROM addon_list WHERE name=? OR main_page_url=? ; ");
 			ps.setString(1, name);
 			ps.setString(2, url);
 			rs = ps.executeQuery();

@@ -113,12 +113,14 @@ public class DataSource {
 	private final static String[] dbStruct = new String[]{"CREATE TABLE `db_version` (\n" +
 			"  `version` int(11) unsigned NOT NULL,\n" +
 			"  PRIMARY KEY (`version`)\n" +
-			") ENGINE=InnoDB DEFAULT CHARSET=utf8;", "CREATE TABLE `addon_list` (\n" +
+			") ENGINE=InnoDB DEFAULT CHARSET=utf8;",
+		"CREATE TABLE `addon_list` (\n" +
 			"  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,\n" +
 			"  `name` varchar(255) NOT NULL DEFAULT '',\n" +
 			"  `main_page_url` varchar(4000) NOT NULL DEFAULT '',\n" +
 			"  PRIMARY KEY (`id`),\n" +
-			") ENGINE=InnoDB DEFAULT CHARSET=utf8;", "CREATE TABLE `addon_version` (\n" +
+			") ENGINE=InnoDB DEFAULT CHARSET=utf8;",
+		"CREATE TABLE `addon_version` (\n" +
 			"  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,\n" +
 			"  `addon_list_id` int(11) unsigned NOT NULL,\n" +
 			"  `version` varchar(255) NOT NULL DEFAULT '',\n" +
@@ -128,7 +130,8 @@ public class DataSource {
 			"  PRIMARY KEY (`id`),\n" +
 			"  KEY `addon_list_id` (`addon_list_id`),\n" +
 			"  CONSTRAINT `addon_version_ibfk_1` FOREIGN KEY (`addon_list_id`) REFERENCES `addon_list` (`id`)\n" +
-			") ENGINE=InnoDB DEFAULT CHARSET=utf8;", "CREATE TABLE `prefs` (\n" +
+			") ENGINE=InnoDB DEFAULT CHARSET=utf8;",
+		"CREATE TABLE `prefs` (\n" +
 			"  `name` varchar(50) NOT NULL DEFAULT '',\n" +
 			"  `data` varchar(4000) DEFAULT NULL,\n" +
 			"  PRIMARY KEY (`name`)\n" +
@@ -162,6 +165,22 @@ public class DataSource {
 		PreparedStatement ps = null;
 		try {
 			conn = getInstance().getConnection();
+			ps = conn.prepareStatement("SELECT MAX(id) FROM addon_list; ");
+			ResultSet resultSet = ps.executeQuery();
+			int max = 1;
+			if(resultSet.next()){
+				max = resultSet.getInt(1)+1;
+			}
+			resultSet.close();
+			ps.close();
+
+			for (Addon addon : addons) {
+				if(addon.getId() == 0){
+					addon.setId(max);
+					max++;
+				}
+			}
+
 			ps = conn.prepareStatement("REPLACE INTO addon_list (id, name, main_page_url) VALUES (?,?,?) ; ");
 			for (Addon addon : addons) {
 				ps.setInt(1, addon.getId());

@@ -36,6 +36,7 @@ public class MainWindow {
 	private JButton btnUpdate;
 	private JCheckBox doRunAfterCheckBox;
 	private JTextField txtCmdAfter;
+	private JButton btnExport;
 
 	private DefaultTableModel dtm;
 
@@ -50,6 +51,22 @@ public class MainWindow {
 	public MainWindow() {
 		loadAddons();
 
+		btnExport.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ViewAddonList viewAddonList = new ViewAddonList();
+				viewAddonList.setLocationRelativeTo(mainPanel);
+				viewAddonList.setSize(new Dimension(900,700));
+				SetWindowPosCenter(viewAddonList);
+				viewAddonList.addWindowListener(new WindowAdapter() {
+					@Override
+					public void windowClosed(WindowEvent e) {
+						loadAddons();
+					}
+				});
+				viewAddonList.setVisible(true);
+			}
+		});
 		btnAdd.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {

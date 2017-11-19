@@ -24,7 +24,7 @@ public class NewAddon extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				btnFetch.setEnabled(false);
 				progress = 0;
-				FetchNewAddonWorker fetchNewAddonWorker = new FetchNewAddonWorker(txtURL.getText(), helpTextPane);
+				FetchNewAddonWorker fetchNewAddonWorker = new FetchNewAddonWorker(txtURL.getText(), true, helpTextPane);
 				fetchNewAddonWorker.addPropertyChangeListener(new PropertyChangeListener() {
 					@Override
 					public void propertyChange(PropertyChangeEvent evt) {

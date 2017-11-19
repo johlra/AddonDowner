@@ -21,7 +21,7 @@ public class NetHandler {
 
 	private static final String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.0) Gecko/20100101 Firefox/36.0";
 	private static final String acceptMethods = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-	static final String internetCheckHost = "www.curse.com";
+	static final String internetCheckHost = "www.curseforge.com";
 	static String host = "addondowner.homeip.net";
 
 	public static String fileDownloader(String fileUrl) throws IOException {
@@ -31,11 +31,16 @@ public class NetHandler {
 			destDir.mkdirs();
 		}
 		File file = new File(AddonDowner.TEMP_FILE_DIR + fileName);
-		if (file.exists()) {
+		if (!fileName.contains("file") && file.exists()) {
 			System.out.println("has file: " + fileName);
 		} else {
 			System.out.println("downloading: " + fileName);
 			Connection.Response fileResponse = getConnection(fileUrl).maxBodySize(0).execute();
+			if(!fileName.equalsIgnoreCase(getFileNameFromUrl(fileResponse.url().getFile()))){
+				fileName = getFileNameFromUrl(fileResponse.url().getFile());
+				System.out.println("downloaded: " + fileName);
+			}
+
 			FileOutputStream out = (new FileOutputStream(new java.io.File(AddonDowner.TEMP_FILE_DIR + fileName)));
 			out.write(fileResponse.bodyAsBytes());
 			out.close();
@@ -51,6 +56,7 @@ public class NetHandler {
 		Map<String, String> cookies = new HashMap<String, String>();
 		Connection.Response response = null;
 		String referrer = "http://www.google.com";
+		String lastUrl = url;
 		while (url.length() > 1) {
 			Connection connect = getConnection(url).followRedirects(false).referrer(referrer);
 			if (cookies.size() > 0) {
@@ -68,15 +74,11 @@ public class NetHandler {
 			String responseLocation = response.header("Location");
 			if (null != responseLocation && responseLocation.length() > 2) {
 				referrer = url;
-				if (responseLocation.startsWith("/")) {
-					url = url.substring(0, url.indexOf("/", url.indexOf("/", url.indexOf("/") + 1) + 1)) + responseLocation;
-				} else if (responseLocation.startsWith("http://") || responseLocation.startsWith("https://")) {
-					url = responseLocation;
-				} else {
-					url = url + responseLocation;
-				}
+
+				url = getUrlFromHref(url, responseLocation);
 				//System.out.println("Found redirect: " + url);
 			} else {
+				lastUrl = url;
 				url = "";
 			}
 		}
@@ -92,13 +94,32 @@ public class NetHandler {
 				for (Element link : links) {
 					String href = link.attr("href");
 					if (href.contains("downloads/elvui")) {
-						data = href;
+						data =  getUrlFromHref(lastUrl, href);
+						break;
+					}
+					if(href.contains("cdn.wowinterface.com") && "Click here".equalsIgnoreCase(link.html())){
+						data = getUrlFromHref(lastUrl, href);;
+						break;
+					}
+					if(href.contains("wow/addons") && href.contains("file")){
+						data = getUrlFromHref(lastUrl, href);;
 						break;
 					}
 				}
 			}
 		}
 		return data;
+	}
+
+	private static String getUrlFromHref(String referer, String link) {
+		if (link.startsWith("/")) {
+            referer = referer.substring(0, referer.indexOf("/", referer.indexOf("/", referer.indexOf("/") + 1) + 1)) + link;
+        } else if (link.startsWith("http://") || link.startsWith("https://")) {
+            referer = link;
+        } else {
+            referer = referer + link;
+        }
+		return referer;
 	}
 
 	private static Connection getConnection(String url) {
@@ -124,7 +145,11 @@ public class NetHandler {
 	}
 
 	public static String getFileNameFromUrl(String fileUrl) {
-		return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+		String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+		if(filename.contains("?")){
+			filename = filename.substring(0,filename.indexOf("?"));
+		}
+		return filename;
 	}
 
 	public static Addon[] getServerAddonList() throws IOException {
@@ -150,7 +175,7 @@ public class NetHandler {
 	}
 
 	public static boolean checkForNetwork() {
-		String url = "http://" + internetCheckHost;
+		String url = "https://" + internetCheckHost;
 		boolean gotContact = false;
 		int retries = 0;
 
@@ -160,9 +185,26 @@ public class NetHandler {
 				if(response.statusCode() == 200){
 					gotContact = true;
 
-					response = getConnection("http://" + host).execute();
-					if(response.statusCode() != 200){
-						host = "192.168.1.100";
+					boolean foundHost = false;
+					String hostPref = DataSource.getPref(AddonDowner.PREF_KEY_SERVER_HOST);
+					System.out.println("Server from pref: "+ hostPref);
+					if(null != hostPref && hostPref.length()>0){
+						System.out.println("Checking for "+ hostPref);
+						boolean hostSearch = checkForHost("http://" + hostPref);
+						System.out.println("Found host "+ hostPref + ": " + hostSearch);
+						if(hostSearch){
+							host = hostPref;
+							foundHost = true;
+						}
+					}
+					if(!foundHost){
+						System.out.println("Checking for "+ host);
+						if(!checkForHost("http://" + host)){
+							System.out.println("Server not found on external address, using local");
+							host = "192.168.1.100";
+						}
+						DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_SERVER_HOST, host);
+						dataSaverWorker.execute();
 					}
 				}
 			} catch (Exception e) {
@@ -176,5 +218,17 @@ public class NetHandler {
 			}
 		}
 		return gotContact;
+	}
+
+	private static boolean checkForHost(String url) {
+		try {
+			Connection.Response response = getConnection(url).execute();
+			if(response.statusCode() == 200){
+                return true;
+            }
+		} catch (IOException e) {
+			return false;
+		}
+		return false;
 	}
 }
