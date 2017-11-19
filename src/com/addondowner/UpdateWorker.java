@@ -45,17 +45,16 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 		ResultSet rs = null;
 		try {
 			String fileUrl = NetHandler.getDataHrefFromUrl(addon.getUrl());
-			String fileName = NetHandler.getFileNameFromUrl(fileUrl);
 			setProgress(10);
 
-			System.out.println("File " + fileName + " from " + fileUrl);
+			System.out.println("File from " + fileUrl);
 
 			boolean hasVersion = false;
 			conn = DataSource.getInstance().getConnection();
 			ps = conn.prepareStatement("SELECT version, version_download_page FROM addon_version " +
-				"WHERE addon_list_id = ? AND installed = 1 AND download_filename = ?; ");
+				"WHERE addon_list_id = ? AND installed = 1 AND version_download_page = ?; ");
 			ps.setInt(1, addon.getId());
-			ps.setString(2, fileName);
+			ps.setString(2, fileUrl);
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				hasVersion = true;
@@ -70,7 +69,7 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 				SetProgress(rowWalker, "Downloading");
 
 				System.out.println("Downloading " + fileUrl);
-				NetHandler.fileDownloader(fileUrl);
+				String fileName = NetHandler.fileDownloader(fileUrl);
 				setProgress(50);
 
 				String extractDir = "";
