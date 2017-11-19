@@ -27,7 +27,7 @@ public class NetHandler {
 	public static String fileDownloader(String fileUrl) throws IOException {
 		String fileName = getFileNameFromUrl(fileUrl);
 		File destDir = new File(AddonDowner.TEMP_FILE_DIR);
-		if (!destDir.exists()) {
+		if (!destDir.exists()){
 			destDir.mkdirs();
 		}
 		File file = new File(AddonDowner.TEMP_FILE_DIR + fileName);
