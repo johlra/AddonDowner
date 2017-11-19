@@ -1,6 +1,9 @@
 package com.addondowner;
 
 import javax.swing.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -82,6 +85,18 @@ public class NewAddon extends JDialog {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		try {
+			Clipboard clipboard = getToolkit().getSystemClipboard();
+			txtURL.setText((String) clipboard.getData(DataFlavor.stringFlavor));
+		} catch (UnsupportedFlavorException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		txtURL.setEnabled(true);
+		btnFetch.setEnabled(true);
+		System.out.print("init on NewAddon done\n");
 
 	}
 
