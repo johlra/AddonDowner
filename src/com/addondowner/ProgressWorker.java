@@ -99,7 +99,7 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 
 	private void doCmdAfter() {
 		try {
-			String launcherPath = DataSource.getPref(AddonDowner.PREF_KEY_CMD_AFTER);
+			String launcherPath = Preference.CMD_AFTER();
 
 			if (null != launcherPath && launcherPath.length() > 0) {
 				String[] cmdline;

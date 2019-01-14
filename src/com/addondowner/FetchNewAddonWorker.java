@@ -77,9 +77,10 @@ public class FetchNewAddonWorker extends SwingWorker<String, Addon> {
 				NetHandler.serverUploadAddonMeta(params);
 			} else {
 				updateStatus("Adding to list", 85);
-				List<Addon> addons = new ArrayList<Addon>();
+				AddonDowner.allAddons.add(new Addon(0,title,url));
+				/*List<Addon> addons = new ArrayList<Addon>();
 				addons.add(new Addon(0, title, url));
-				DataSource.saveAddonList(addons);
+				Addon.saveAddonListToJson(addons);*/
 			}
 
 		} catch (IOException e1) {

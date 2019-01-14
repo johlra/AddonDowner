@@ -15,7 +15,7 @@ public class ViewAddonList extends JDialog {
 	private JTextPane helpTextPane;
 
 	public ViewAddonList() {
-		java.util.List<Addon> addons = Addon.fetchAddonList();
+		java.util.List<Addon> addons =  AddonDowner.allAddons;
 		String list = "";
 		for (Addon addon : addons) {
 			list += addon.getId() + ";" + addon.getName() + ";" + addon.getUrl() + "\n";
@@ -82,7 +82,7 @@ public class ViewAddonList extends JDialog {
 			}
 			Addon addon = new Addon(0,"","");
 			if(id > 0){
-				addon = new Addon(id);
+				addon = new Addon(name);
 			}
 			if(!name.equals("")){
 				addon.setName(name);
@@ -122,7 +122,7 @@ public class ViewAddonList extends JDialog {
 			}
 
 		}
-		DataSource.saveAddonList(addons);
+		Addon.saveAddonListToJson(addons);
 
 		boolean fetching = true;
 		while (fetching){

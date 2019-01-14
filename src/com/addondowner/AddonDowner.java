@@ -1,6 +1,12 @@
 package com.addondowner;
 
-import java.io.File;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AddonDowner {
 
@@ -18,9 +24,15 @@ public class AddonDowner {
 	public final static String PREF_KEY_WINDOW_SIZE = "windowsize";
 	public final static String PREF_KEY_SERVER_HOST = "serverhostaddress";
 
-	public static final String TEMP_FILE_DIR = "." + File.separator + "download_cache" + File.separator;
+	public final static String TEMP_FILE_DIR = "." + File.separator + "download_cache" + File.separator;
+
+	public final static String CONFIG_FILE = "." + File.separator + "config.json";
+	public final static String ADDON_LIST_FILE = "." + File.separator + "addons.json";
 
 	public final static int HTTP_TIMEOUT = 30 * 1000;
+
+	public static java.util.List<Addon> allAddons = new ArrayList<Addon>();
+	public static Preference[] allPrefs = new Preference[0];
 
 	public static void main(String[] args) {
 	    // DOSEN'T WORK ON NEWER JAVA
@@ -28,14 +40,20 @@ public class AddonDowner {
 	    System.setProperty("apple.laf.useScreenMenuBar", "true");
 	    System.setProperty("com.apple.mrj.application.apple.menu.about.name", appName);
 	    // end dosen't work
+
+		allPrefs = Preference.getAllPrefs();
+		if(allPrefs.length == 0){
+			allPrefs = Preference.getPrefsFromDB();
+			Preference.saveAllPrefs(allPrefs);
+		}
+		allAddons = Addon.getAddonListFromJson();
+		if(allAddons.size() == 0){
+			allAddons = Addon.fetchAddonListFromDB();
+			Addon.saveAddonListToJson(allAddons);
+		}
+
 		if(NetHandler.checkForNetwork()){
-			try {
-				Class.forName("org.h2.Driver");
-				DataSource.checkDBStruckt();
-				MainWindow.main(new String[]{appName});
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
+			MainWindow.main(new String[]{appName});
 		} else {
 			System.out.println("Quiting, error, no network");
 		}

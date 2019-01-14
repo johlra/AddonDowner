@@ -27,7 +27,7 @@ public class NewAddon extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				btnFetch.setEnabled(false);
 				progress = 0;
-				FetchNewAddonWorker fetchNewAddonWorker = new FetchNewAddonWorker(txtURL.getText(), true, helpTextPane);
+				FetchNewAddonWorker fetchNewAddonWorker = new FetchNewAddonWorker(txtURL.getText(), false, helpTextPane);
 				fetchNewAddonWorker.addPropertyChangeListener(new PropertyChangeListener() {
 					@Override
 					public void propertyChange(PropertyChangeEvent evt) {
@@ -67,24 +67,6 @@ public class NewAddon extends JDialog {
 			}
 		}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-		try {
-			Addon[] addonsServer = NetHandler.getServerAddonList();
-			List<Addon> localAddons = Addon.fetchAddonList();
-			for (Addon la : localAddons) {
-				boolean hasAddonOnServer = false;
-				for (Addon sa : addonsServer) {
-					if(la.getUrl().equalsIgnoreCase(sa.getUrl())){
-						hasAddonOnServer = true;
-					}
-				}
-				if(!hasAddonOnServer){
-					txtURL.setText(la.getUrl());
-					break;
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		try {
 			Clipboard clipboard = getToolkit().getSystemClipboard();
 			txtURL.setText((String) clipboard.getData(DataFlavor.stringFlavor));

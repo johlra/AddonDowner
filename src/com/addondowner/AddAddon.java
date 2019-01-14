@@ -70,7 +70,7 @@ public class AddAddon extends JDialog {
 		scanForInstalledButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String addonDir = DataSource.getPref(AddonDowner.PREF_KEY_WOW_ADDON_DIR);
+				String addonDir = Preference.WOW_ADDON_DIR();
 				File file = new File(addonDir);
 				String[] directories = file.list(new FilenameFilter() {
 					@Override
@@ -186,7 +186,7 @@ public class AddAddon extends JDialog {
 				}
 			}
 		}
-		DataSource.saveAddonList(checkedAddonId);
+		Addon.saveAddonListToJson(checkedAddonId);
 		dispose();
 	}
 

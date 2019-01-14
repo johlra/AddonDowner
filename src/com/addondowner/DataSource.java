@@ -53,8 +53,52 @@ public class DataSource {
 	public Connection getConnection() throws SQLException {
 		return this.cp.getConnection();
 	}
+	// USED FOR CONVERSION
+	public static String getPref(String prefKey) {
+		String ret = "";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			conn = getInstance().getConnection();
+			ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
+			ps.setString(1, prefKey);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				ret = rs.getString(1);
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			DataSource.closeQuietly(rs, ps, conn);
+		}
+		return ret;
+	}
 
-	public static void checkDBStruckt() {
+	public static void closeQuietly(ResultSet rs, PreparedStatement ps, Connection conn) {
+		if (rs != null)
+			try {
+				rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		if (ps != null)
+			try {
+				ps.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		if (conn != null)
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+	}
+
+/*	public static void checkDBStruckt() {
 		Connection conn = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -137,29 +181,6 @@ public class DataSource {
 			"  PRIMARY KEY (`name`)\n" +
 			") ENGINE=InnoDB DEFAULT CHARSET=utf8;"};
 
-	public static String getPref(String prefKey) {
-		String ret = "";
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			conn = getInstance().getConnection();
-			ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
-			ps.setString(1, prefKey);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				ret = rs.getString(1);
-			}
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			DataSource.closeQuietly(rs, ps, conn);
-		}
-		return ret;
-	}
-
 	public static void saveAddonList(List<Addon> addons) {
 		Connection conn = null;
 		PreparedStatement ps = null;
@@ -196,25 +217,5 @@ public class DataSource {
 			DataSource.closeQuietly(null, ps, conn);
 		}
 	}
-
-	public static void closeQuietly(ResultSet rs, PreparedStatement ps, Connection conn) {
-		if (rs != null)
-			try {
-				rs.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		if (ps != null)
-			try {
-				ps.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		if (conn != null)
-			try {
-				conn.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-	}
+*/
 }

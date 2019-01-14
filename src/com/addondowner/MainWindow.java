@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 /**
@@ -70,7 +71,7 @@ public class MainWindow {
 		btnAdd.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				AddAddon addAddon = new AddAddon();
+				NewAddon addAddon = new NewAddon();
 				addAddon.setLocationRelativeTo(mainPanel);
 				addAddon.setSize(new Dimension(700, 450));
 				SetWindowPosCenter(addAddon);
@@ -78,6 +79,18 @@ public class MainWindow {
 					@Override
 					public void windowClosed(WindowEvent e) {
 						loadAddons();
+						Date start = new Date();
+						updateWorkers = new ArrayList<UpdateWorker>();
+						for (int i = 0; i < tblAddon.getRowCount(); i++) {
+							if(((String) tblAddon.getValueAt(i, 0)).equalsIgnoreCase("No version")){
+								UpdateWorker updateWorker = new UpdateWorker(dtm, new Addon((String) tblAddon.getValueAt(i, 2)));
+								updateWorkers.add(updateWorker);
+								updateWorker.execute();
+							}
+						}
+						ProgressWorker pgw = new ProgressWorker(updateWorkers, start);
+						pgw.execute();
+
 					}
 				});
 				addAddon.setVisible(true);
@@ -116,8 +129,7 @@ public class MainWindow {
 			}
 
 			public void saveEntry() {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WOW_ADDON_DIR, txtAddonDir.getText());
-				dataSaverWorker.execute();
+				Preference.WOW_ADDON_DIR(txtAddonDir.getText());
 			}
 		});
 
@@ -138,8 +150,7 @@ public class MainWindow {
 			}
 
 			public void saveEntry() {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_CMD_BEFORE, txtCmdBefore.getText());
-				dataSaverWorker.execute();
+				Preference.CMD_BEFORE(txtCmdBefore.getText());
 			}
 		});
 		txtCmdAfter.getDocument().addDocumentListener(new DocumentListener() {
@@ -159,34 +170,29 @@ public class MainWindow {
 			}
 
 			public void saveEntry() {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_CMD_AFTER, txtCmdAfter.getText());
-				dataSaverWorker.execute();
+				Preference.CMD_AFTER(txtCmdAfter.getText());
 			}
 		});
 
 		chkbAutoUpdate.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_AUTO_UPDATE_ON_LAUNCH, String.valueOf(chkbAutoUpdate.isSelected()));
-				dataSaverWorker.execute();
+				Preference.AUTO_UPDATE_ON_LAUNCH(chkbAutoUpdate.isSelected());
 			}
 		});
 		chkbQuitAfterUpdate.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE, String.valueOf(chkbQuitAfterUpdate.isSelected()));
-				dataSaverWorker.execute();
+				Preference.AUTO_QUIT_AFTER_UPDATE(chkbQuitAfterUpdate.isSelected());
 			}
 		});
 		chkbDoRunBefore.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_DO_CMD_BEFORE, String.valueOf(chkbDoRunBefore.isSelected()));
-				dataSaverWorker.execute();
+				Preference.DO_CMD_BEFORE(chkbDoRunBefore.isSelected());
 			}
 		});
 		doRunAfterCheckBox.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-				DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_DO_CMD_AFTER, String.valueOf(doRunAfterCheckBox.isSelected()));
-				dataSaverWorker.execute();
+				Preference.DO_CMD_AFTER(doRunAfterCheckBox.isSelected());
 			}
 		});
 
@@ -213,21 +219,21 @@ public class MainWindow {
 			}
 		});
 
-		txtAddonDir.setText(DataSource.getPref(AddonDowner.PREF_KEY_WOW_ADDON_DIR));
+		txtAddonDir.setText(Preference.WOW_ADDON_DIR());
 
-		txtCmdBefore.setText(DataSource.getPref(AddonDowner.PREF_KEY_CMD_BEFORE));
-		txtCmdAfter.setText(DataSource.getPref(AddonDowner.PREF_KEY_CMD_AFTER));
+		txtCmdBefore.setText(Preference.CMD_BEFORE());
+		txtCmdAfter.setText(Preference.CMD_AFTER());
 
 
-		boolean doAutoUpdate = DataSource.getPref(AddonDowner.PREF_KEY_AUTO_UPDATE_ON_LAUNCH).equalsIgnoreCase("true");
+		boolean doAutoUpdate = Preference.AUTO_UPDATE_ON_LAUNCH();
 		chkbAutoUpdate.setSelected(doAutoUpdate);
 
-		chkbQuitAfterUpdate.setSelected(DataSource.getPref(AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE).equalsIgnoreCase("true"));
+		chkbQuitAfterUpdate.setSelected(Preference.AUTO_QUIT_AFTER_UPDATE());
 
-		boolean doStartLauncher = DataSource.getPref(AddonDowner.PREF_KEY_DO_CMD_BEFORE).equalsIgnoreCase("true");
+		boolean doStartLauncher = Preference.DO_CMD_BEFORE();
 		chkbDoRunBefore.setSelected(doStartLauncher);
 
-		doRunAfterCheckBox.setSelected(DataSource.getPref(AddonDowner.PREF_KEY_DO_CMD_AFTER).equalsIgnoreCase("true"));
+		doRunAfterCheckBox.setSelected(Preference.DO_CMD_AFTER());
 
 		if (doStartLauncher) {
 			doCmdBefore();
@@ -254,7 +260,7 @@ public class MainWindow {
 	private void doCmdBefore() {
 		try {
 			// launcherPath = "/Applications/World of Warcraft/World of Warcraft Launcher.app";
-			String launcherPath = DataSource.getPref(AddonDowner.PREF_KEY_CMD_BEFORE);
+			String launcherPath = Preference.CMD_BEFORE();
 
 			if (null != launcherPath && launcherPath.length() > 0) {
 				String[] cmdline;
@@ -283,16 +289,15 @@ public class MainWindow {
 			try {
 				java.util.List<Addon> addons = new ArrayList<Addon>();
 				if(onlySelected){
-					Integer selectedData;
 					int[] selectedRows = tblAddon.getSelectedRows();
 					for (int aSelectedRow : selectedRows) {
-						selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
+						String selectedData = (String) tblAddon.getValueAt(aSelectedRow, 2);
 						if (null != selectedData) {
 							addons.add(new Addon(selectedData));
 						}
 					}
 				} else {
-					addons = Addon.fetchAddonList();
+					addons = AddonDowner.allAddons;
 				}
 
 				int waitCounter = 0;
@@ -325,6 +330,14 @@ public class MainWindow {
 		frame.setTitle(args[0]);
 		frame.setContentPane(new MainWindow().mainPanel);
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		frame.addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosing(java.awt.event.WindowEvent e) {
+				Addon.saveAddonListToJson(AddonDowner.allAddons);
+				Preference.saveAllPrefs(AddonDowner.allPrefs);
+				//e.getWindow().dispose();
+			}
+		});
 		frame.pack();
 		frame.setSize(getWindowStartSize());
 		Point windowsStartLocation = getWindowsStartLocation();
@@ -358,14 +371,12 @@ public class MainWindow {
 	private static void saveWindowSize(ComponentEvent e) {
 		int x = e.getComponent().getWidth();
 		int y = e.getComponent().getHeight();
-		String pos = x + ";" + y;
-		DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WINDOW_SIZE, pos);
-		dataSaverWorker.execute();
+		Preference.WINDOW_SIZE(x + ";" + y);
 	}
 
 	private static Dimension getWindowStartSize() {
 		try {
-			String comprPos = DataSource.getPref(AddonDowner.PREF_KEY_WINDOW_SIZE);
+			String comprPos = Preference.WINDOW_SIZE();
 			comprPos = comprPos.replace("x", "").replace("y", "").replace(":", "");
 			String[] pos = comprPos.split(";");
 			int posx = Integer.parseInt(pos[0]);
@@ -380,14 +391,12 @@ public class MainWindow {
 	private static void saveWindowPos(ComponentEvent e) {
 		int x = e.getComponent().getX();
 		int y = e.getComponent().getY();
-		String pos = x + ";" + y;
-		DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_WINDOW_POS, pos);
-		dataSaverWorker.execute();
+		Preference.WINDOW_POS(x + ";" + y);
 	}
 
 	private static Point getWindowsStartLocation() {
 		try {
-			String comprPos = DataSource.getPref(AddonDowner.PREF_KEY_WINDOW_POS);
+			String comprPos = Preference.WINDOW_POS();
 			comprPos = comprPos.replace("x","").replace("y","").replace(":", "");
 			String[] pos = comprPos.split(";");
 			int posx = Integer.parseInt(pos[0]);
@@ -441,14 +450,21 @@ public class MainWindow {
 			}
 		});
 
-		java.util.List<Addon> addons = Addon.fetchAddonList();
-		for (Addon addon : addons) {
-			dtm.addRow(new Object[]{"", addon.getId(), addon.getName(), addon.getUrl()});
+		Collections.sort(AddonDowner.allAddons);
+		for (Addon addon : AddonDowner.allAddons) {
+			String info = "";
+			if(addon.getVersionDownloadPage().isEmpty()){
+				info = "No version";
+			}
+			dtm.addRow(new Object[]{info, addon.getId(), addon.getName(), addon.getUrl()});
 		}
 
 		tblAddon.getColumnModel().getColumn(0).setPreferredWidth(130);
-		tblAddon.getColumnModel().getColumn(1).setPreferredWidth(30);
-		tblAddon.getColumnModel().getColumn(2).setPreferredWidth(180);
+		//tblAddon.getColumnModel().getColumn(1).setPreferredWidth(30);
+		tblAddon.getColumnModel().getColumn(1).setMinWidth(0);
+		tblAddon.getColumnModel().getColumn(1).setMaxWidth(0);
+		tblAddon.getColumnModel().getColumn(1).setWidth(0);
+		tblAddon.getColumnModel().getColumn(2).setPreferredWidth(280);
 		tblAddon.getColumnModel().getColumn(3).setPreferredWidth(500);
 		//tblAddon.getColumn("Id").setPreferredWidth(30);
 		//tblAddon.getColumn("Id").setWidth(30);
@@ -458,87 +474,30 @@ public class MainWindow {
 	}
 
 	private void deleteSelectedAddonsVersionInfo() {
-		Integer selectedData;
-		java.util.List<Integer> rowsToDelete = new ArrayList<Integer>();
 		int[] selectedRows = tblAddon.getSelectedRows();
 		for (int aSelectedRow : selectedRows) {
-			selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
-			if (null != selectedData) {
-				rowsToDelete.add(selectedData);
-			}
-		}
-		if (rowsToDelete.size() > 0) {
-			String addonsToDelete = "";
-			for (int i = 0; i < rowsToDelete.size(); i++) {
-				Integer addonId = rowsToDelete.get(i);
-				if (i > 0) {
-					addonsToDelete = addonsToDelete + ",";
+			String delAddonName = (String) tblAddon.getValueAt(aSelectedRow, 2);
+			for (int i = 0; i < AddonDowner.allAddons.size(); i++) {
+				Addon addon = AddonDowner.allAddons.get(i);
+				if(addon.getName().equalsIgnoreCase(delAddonName)){
+					addon.setVersionDownloadPage("");
 				}
-				addonsToDelete = addonsToDelete + addonId;
-			}
-			Connection conn = null;
-			PreparedStatement ps = null;
-			try {
-				conn = DataSource.getInstance().getConnection();
-				ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
-				ps.execute();
-				for (int aSelectedRow : selectedRows) {
-					selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
-					if (null != selectedData) {
-						tblAddon.setValueAt("Version info removed", aSelectedRow, 0);
-					}
-				}
-			} catch (ClassNotFoundException e1) {
-				e1.printStackTrace();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-			} finally {
-				DataSource.closeQuietly(null, ps, conn);
 			}
 		}
 	}
 
 	private void deleteSelectedAddonsFromDB() {
-		Integer selectedData;
-		java.util.List<Integer> rowsToDelete = new ArrayList<Integer>();
 		int[] selectedRows = tblAddon.getSelectedRows();
 		for (int aSelectedRow : selectedRows) {
-			selectedData = (Integer) tblAddon.getValueAt(aSelectedRow, 1);
-			if (null != selectedData) {
-				rowsToDelete.add(selectedData);
-			}
-		}
-		if (rowsToDelete.size() > 0) {
-			String addonsToDelete = "";
-			for (int i = 0; i < rowsToDelete.size(); i++) {
-				Integer addonId = rowsToDelete.get(i);
-				if (i > 0) {
-					addonsToDelete = addonsToDelete + ",";
+			String delAddonName = (String) tblAddon.getValueAt(aSelectedRow, 2);
+			for (int i = 0; i < AddonDowner.allAddons.size(); i++) {
+				Addon addon = AddonDowner.allAddons.get(i);
+				if(addon.getName().equalsIgnoreCase(delAddonName)){
+					AddonDowner.allAddons.remove(i);
 				}
-				addonsToDelete = addonsToDelete + addonId;
 			}
-			Connection conn = null;
-			PreparedStatement ps = null;
-			try {
-				conn = DataSource.getInstance().getConnection();
-
-				ps = conn.prepareStatement("DELETE FROM addon_version WHERE addon_list_id IN (" + addonsToDelete + "); ");
-				ps.execute();
-				ps.close();
-
-				ps = conn.prepareStatement("DELETE FROM addon_list WHERE id IN (" + addonsToDelete + "); ");
-				ps.execute();
-				ps.close();
-
-			} catch (ClassNotFoundException e1) {
-				e1.printStackTrace();
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-			} finally {
-				DataSource.closeQuietly(null, ps, conn);
-			}
-			loadAddons();
 		}
+		loadAddons();
 	}
 
 	public static boolean isWindows() {

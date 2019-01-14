@@ -21,7 +21,6 @@ public class NetHandler {
 
 	private static final String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.0) Gecko/20100101 Firefox/36.0";
 	private static final String acceptMethods = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-	static final String internetCheckHost = "www.curseforge.com";
 	static String host = "addondowner.homeip.net";
 
 	public static String fileDownloader(String fileUrl) throws IOException {
@@ -154,7 +153,7 @@ public class NetHandler {
 
 	public static Addon[] getServerAddonList() throws IOException {
 		String url = "http://" + host + "/cgi-bin/addonlist.cgi";
-		Connection.Response fileResponse = getConnection(url).execute(); // todo add shorter timeout
+		Connection.Response fileResponse = getConnection(url).execute(); //TODO add shorter timeout
 		Gson gson = new Gson();
 		return gson.fromJson(fileResponse.body(), Addon[].class);
 	}
@@ -175,7 +174,7 @@ public class NetHandler {
 	}
 
 	public static boolean checkForNetwork() {
-		String url = "https://" + internetCheckHost;
+		String url = "https://" + Preference.NETWORK_CHECK_URL();
 		boolean gotContact = false;
 		int retries = 0;
 
@@ -184,28 +183,6 @@ public class NetHandler {
 				Connection.Response response = getConnection(url).execute();
 				if(response.statusCode() == 200){
 					gotContact = true;
-
-					boolean foundHost = false;
-					String hostPref = DataSource.getPref(AddonDowner.PREF_KEY_SERVER_HOST);
-					System.out.println("Server from pref: "+ hostPref);
-					if(null != hostPref && hostPref.length()>0){
-						System.out.println("Checking for "+ hostPref);
-						boolean hostSearch = checkForHost("http://" + hostPref);
-						System.out.println("Found host "+ hostPref + ": " + hostSearch);
-						if(hostSearch){
-							host = hostPref;
-							foundHost = true;
-						}
-					}
-					if(!foundHost){
-						System.out.println("Checking for "+ host);
-						if(!checkForHost("http://" + host)){
-							System.out.println("Server not found on external address, using local");
-							host = "192.168.1.100";
-						}
-						DataSaverWorker dataSaverWorker = new DataSaverWorker(AddonDowner.PREF_KEY_SERVER_HOST, host);
-						dataSaverWorker.execute();
-					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -218,17 +195,5 @@ public class NetHandler {
 			}
 		}
 		return gotContact;
-	}
-
-	private static boolean checkForHost(String url) {
-		try {
-			Connection.Response response = getConnection(url).execute();
-			if(response.statusCode() == 200){
-                return true;
-            }
-		} catch (IOException e) {
-			return false;
-		}
-		return false;
 	}
 }

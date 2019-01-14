@@ -40,26 +40,13 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 		setProgress(1);
 		SetProgress(rowWalker, "Checking");
 
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
 		try {
 			String fileUrl = NetHandler.getDataHrefFromUrl(addon.getUrl());
 			setProgress(10);
 
 			System.out.println("File from " + fileUrl);
 
-			boolean hasVersion = false;
-			conn = DataSource.getInstance().getConnection();
-			ps = conn.prepareStatement("SELECT version, version_download_page FROM addon_version " +
-				"WHERE addon_list_id = ? AND installed = 1 AND version_download_page = ?; ");
-			ps.setInt(1, addon.getId());
-			ps.setString(2, fileUrl);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				hasVersion = true;
-			}
-			ps.close();
+			boolean hasVersion = fileUrl.equalsIgnoreCase(addon.getVersionDownloadPage());
 			setProgress(20);
 			if (hasVersion) {
 				SetProgress(rowWalker, "Up to date");
@@ -72,14 +59,7 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 				String fileName = NetHandler.fileDownloader(fileUrl);
 				setProgress(50);
 
-				String extractDir = "";
-				ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
-				ps.setString(1, AddonDowner.PREF_KEY_WOW_ADDON_DIR);
-				rs = ps.executeQuery();
-				if(rs.next()){
-					extractDir = rs.getString(1);
-				}
-				ps.close();
+				String extractDir = Preference.WOW_ADDON_DIR();
 				setProgress(52);
 
 				SetProgress(rowWalker, "Extracting");
@@ -89,13 +69,14 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 					zipHandler.unzip();
 					String version = zipHandler.getUniqueVersion();
 					setProgress(96);
-					ps = conn.prepareStatement("REPLACE INTO addon_version (addon_list_id, version, version_download_page, download_filename, installed) VALUES (?,?,?,?,?)");
-					ps.setInt(1, addon.getId());
-					ps.setString(2, version);
-					ps.setString(3, fileUrl);
-					ps.setString(4, fileName);
-					ps.setInt(5, 1);
-					ps.executeUpdate();
+					List<Addon> allAddons = AddonDowner.allAddons;
+					for (Addon addon1 : allAddons) {
+						if (addon.getName().equalsIgnoreCase(addon1.getName())) {
+							addon1.setVersionDownloadPage(fileUrl);
+							addon1.setVersion(version);
+							break;
+						}
+					}
 					SetProgress(rowWalker, "Updated");
 					UpdateToServerWorker updateToServerWorker = new UpdateToServerWorker(addon, fileUrl, fileName, version, zipHandler.getTopDirs(), zipHandler.getTocs());
 					updateToServerWorker.execute();
@@ -108,14 +89,6 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 
 				setProgress(99);
 			}
-		} catch (ClassNotFoundException e) {
-			System.out.println("Error: " + e.getMessage());
-			e.printStackTrace();
-			SetProgress(rowWalker, "Error: " + e.getMessage());
-		} catch (SQLException e) {
-			System.out.println("Error: " + e.getMessage());
-			e.printStackTrace();
-			SetProgress(rowWalker, "Error: " + e.getMessage());
 		} catch (FileNotFoundException e) {
 			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
@@ -124,10 +97,7 @@ public class UpdateWorker extends SwingWorker<String, Addon> {
 			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();
 			SetProgress(rowWalker, "Error: " + e.getMessage());
-		} finally {
-			DataSource.closeQuietly(rs, ps, conn);
 		}
-
 		System.out.println("Check/Update of " + addon.getName() + " took " + (new Date().getTime() - start.getTime()) + " ms");
 		setProgress(100);
 		return "Done";
