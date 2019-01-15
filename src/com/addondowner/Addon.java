@@ -203,18 +203,27 @@ public class Addon implements Comparable<Addon> {
 		}
 
 	}
-	public static java.util.List<Addon> getAddonListFromJson(){
+	public static java.util.List<Addon> getAddonListFromJson() throws IOException {
+		File addonFile = new File(AddonDowner.ADDON_LIST_FILE);
+		boolean fileExist = false;
+		if(!addonFile.exists()){
+			if(addonFile.createNewFile()){
+				fileExist = true;
+			}
+		} else {
+			fileExist = true;
+		}
 		java.util.List<Addon> ret = new ArrayList<Addon>();
-		try(Reader reader = new InputStreamReader(new FileInputStream(AddonDowner.ADDON_LIST_FILE), "UTF-8")){
-			Gson gson = new GsonBuilder().create();
-			Addon[] addonList = gson.fromJson(reader, Addon[].class);
-			Collections.addAll(ret, addonList);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(fileExist) {
+			try (Reader reader = new InputStreamReader(new FileInputStream(addonFile), "UTF-8")) {
+				Gson gson = new GsonBuilder().create();
+				Addon[] addonList = gson.fromJson(reader, Addon[].class);
+				if(null != addonList){
+					Collections.addAll(ret, addonList);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return ret;
 	}

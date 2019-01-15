@@ -91,36 +91,34 @@ public class ViewAddonList extends JDialog {
 				addon.setUrl(url);
 			}
 
-			if(addon.getId() == 0){
-				Addon checkAddon = Addon.fetchOnNameOrUrl(addon.getName(), addon.getUrl());
-				if(null != checkAddon){
-					addons.add(checkAddon);
-				} else {
-					FetchNewAddonWorker fetchNewAddonWorker = new FetchNewAddonWorker(addon.getUrl(), false, helpTextPane);
-					fetchNewAddonWorker.addPropertyChangeListener(new PropertyChangeListener() {
-						@Override
-						public void propertyChange(PropertyChangeEvent evt) {
-							if ("progress".equals(evt.getPropertyName())) {
-							} else if ("state".equals(evt.getPropertyName())){
-								if("DONE".equalsIgnoreCase(String.valueOf(evt.getNewValue()))){
-								} else if(!"STARTED".equalsIgnoreCase(String.valueOf(evt.getNewValue()))) {
-									System.out.print("unhandled state = " + evt.getNewValue() + "\n");
-								}
-							} else {
-								System.out.print("Unhandled property change: " + evt.getPropertyName() + " = " + evt.getNewValue() + "\n");
-							}
-							//System.out.print(String.format("Completed %d%%.\n", progress));
-						}
-					});
-					workers.add(fetchNewAddonWorker);
-					fetchNewAddonWorker.execute();
-
+			boolean hasAddon = false;
+			for (int i = 0; i < AddonDowner.allAddons.size(); i++) {
+				Addon listAddon = AddonDowner.allAddons.get(i);
+				if(listAddon.getName().equalsIgnoreCase(addon.getName()) || listAddon.getUrl().equalsIgnoreCase(addon.getUrl())){
+					hasAddon = true;
 				}
-
-			} else {
-				addons.add(addon);
 			}
 
+			if(!hasAddon){
+				FetchNewAddonWorker fetchNewAddonWorker = new FetchNewAddonWorker(addon.getUrl(), false, helpTextPane);
+				fetchNewAddonWorker.addPropertyChangeListener(new PropertyChangeListener() {
+					@Override
+					public void propertyChange(PropertyChangeEvent evt) {
+						if ("progress".equals(evt.getPropertyName())) {
+						} else if ("state".equals(evt.getPropertyName())){
+							if("DONE".equalsIgnoreCase(String.valueOf(evt.getNewValue()))){
+							} else if(!"STARTED".equalsIgnoreCase(String.valueOf(evt.getNewValue()))) {
+								System.out.print("unhandled state = " + evt.getNewValue() + "\n");
+							}
+						} else {
+							System.out.print("Unhandled property change: " + evt.getPropertyName() + " = " + evt.getNewValue() + "\n");
+						}
+						//System.out.print(String.format("Completed %d%%.\n", progress));
+					}
+				});
+				workers.add(fetchNewAddonWorker);
+				fetchNewAddonWorker.execute();
+			}
 		}
 		Addon.saveAddonListToJson(addons);
 
@@ -143,7 +141,6 @@ public class ViewAddonList extends JDialog {
 				}
 			}
 		}
-
 		dispose();
 	}
 

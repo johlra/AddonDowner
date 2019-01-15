@@ -39,39 +39,8 @@ public class ProgressWorker extends SwingWorker<String, Addon> {
 
 		System.out.print("All update workers done, total time " + (new Date().getTime()-startTime.getTime()) + " ms");
 
-		Boolean doAutoQuit = false;
-		Boolean doCmdAfter = false;
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			conn = DataSource.getInstance().getConnection();
-			ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
-			ps.setString(1, AddonDowner.PREF_KEY_AUTO_QUIT_AFTER_UPDATE);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				doAutoQuit = Boolean.valueOf(rs.getString(1));
-			}
-			rs.close();
-			ps.close();
-
-			ps = conn.prepareStatement("SELECT data FROM prefs WHERE name = ?;");
-			ps.setString(1, AddonDowner.PREF_KEY_DO_CMD_AFTER);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				doCmdAfter = Boolean.valueOf(rs.getString(1));
-			}
-			rs.close();
-			ps.close();
-
-
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			DataSource.closeQuietly(rs, ps, conn);
-		}
+		Boolean doAutoQuit = Preference.AUTO_QUIT_AFTER_UPDATE();
+		Boolean doCmdAfter = Preference.DO_CMD_AFTER();
 
 		if(doCmdAfter){
 			doCmdAfter();

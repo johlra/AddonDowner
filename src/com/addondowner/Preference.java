@@ -59,6 +59,9 @@ public class Preference {
 				"window_pos",
 				"window_size",
 				"network_check_url"};
+		if(null == prefs){
+			prefs = new Preference[0];
+		}
 		if(prefs.length == allPrefsKey.length) {
 			return prefs;
 		} else {
@@ -90,6 +93,9 @@ public class Preference {
 						case "network_check_url":
 							value = "www.curseforge.com";
 							break;
+						case "window_size":
+							value = "800;500";
+							break;
 						default:
 							value = "";
 							break;
@@ -101,16 +107,23 @@ public class Preference {
 		}
 	}
 
-	public static Preference[] getAllPrefs() {
-		try(Reader reader = new InputStreamReader(new FileInputStream(AddonDowner.CONFIG_FILE), "UTF-8")){
-			Gson gson = new GsonBuilder().create();
-			return fillOutSoWeHaveAllPrefs(gson.fromJson(reader, Preference[].class));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+	public static Preference[] getAllPrefs() throws IOException {
+		File configFile = new File(AddonDowner.CONFIG_FILE);
+		boolean fileExist = false;
+		if(!configFile.exists()){
+			if(configFile.createNewFile()){
+				fileExist = true;
+			}
+		} else {
+			fileExist = true;
+		}
+		if(fileExist){
+			try(Reader reader = new InputStreamReader(new FileInputStream(configFile), "UTF-8")){
+				Gson gson = new GsonBuilder().create();
+				return fillOutSoWeHaveAllPrefs(gson.fromJson(reader, Preference[].class));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return new Preference[0];
 	}
@@ -205,7 +218,7 @@ public class Preference {
 		}
 		return null;
 	}
-
+/*
 	public static Preference[] getPrefsFromDB(){
 		Preference[] prefs = new Preference[9];
 		prefs[0] = new Preference("wow_addon_dir", DataSource.getPref(AddonDowner.PREF_KEY_WOW_ADDON_DIR));
@@ -218,6 +231,6 @@ public class Preference {
 		prefs[7] = new Preference("window_pos", DataSource.getPref(AddonDowner.PREF_KEY_WINDOW_POS));
 		prefs[8] = new Preference("window_size", DataSource.getPref(AddonDowner.PREF_KEY_WINDOW_SIZE));
 		return fillOutSoWeHaveAllPrefs(prefs);
-	}
+	}*/
 
 }

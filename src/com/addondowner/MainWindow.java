@@ -8,10 +8,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -38,6 +36,11 @@ public class MainWindow {
 	private JCheckBox doRunAfterCheckBox;
 	private JTextField txtCmdAfter;
 	private JButton btnExport;
+	private JButton btnBrowse;
+	private JButton btnBrowsBefore;
+	private JButton btnBrowseAfter;
+	private JFileChooser fcDir;
+	private JFileChooser fcFile;
 
 	private DefaultTableModel dtm;
 
@@ -51,6 +54,12 @@ public class MainWindow {
 
 	public MainWindow() {
 		loadAddons();
+
+		fcDir = new JFileChooser();
+		fcDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fcFile = new JFileChooser();
+		fcFile.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+
 
 		btnExport.addActionListener(new ActionListener() {
 			@Override
@@ -242,6 +251,39 @@ public class MainWindow {
 		if(doAutoUpdate){
 			doAddonUpdate(false);
 		}
+		btnBrowse.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int returnVal = fcDir.showOpenDialog(btnBrowse);
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fcDir.getSelectedFile();
+					txtAddonDir.setText(file.getAbsolutePath());
+				}
+			}
+		});
+		btnBrowsBefore.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int returnVal = fcFile.showOpenDialog(btnBrowsBefore);
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fcFile.getSelectedFile();
+					txtCmdBefore.setText(file.getAbsolutePath());
+				}
+			}
+		});
+		btnBrowseAfter.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int returnVal = fcFile.showOpenDialog(btnBrowseAfter);
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fcFile.getSelectedFile();
+					txtCmdAfter.setText(file.getAbsolutePath());
+				}
+			}
+		});
 	}
 
 	static void SetWindowPosCenter(JDialog addAddon) {
@@ -397,6 +439,9 @@ public class MainWindow {
 	private static Point getWindowsStartLocation() {
 		try {
 			String comprPos = Preference.WINDOW_POS();
+			if("".equals(comprPos)){
+				return null;
+			}
 			comprPos = comprPos.replace("x","").replace("y","").replace(":", "");
 			String[] pos = comprPos.split(";");
 			int posx = Integer.parseInt(pos[0]);
